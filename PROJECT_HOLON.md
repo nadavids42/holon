@@ -938,6 +938,25 @@ All implementation details not fixed above—including exact model assignments, 
 
 ## 14. Immediate next actions
 
+### Accepted implementation sequence — 2026-10-24
+
+Start with the smallest persistent belief-revision loop before building the full
+benchmark: structured reports, explicit support/contradiction links, deterministic
+qualitative belief states, SQLite persistence, and CLI inspection of provenance
+and revision history. Reports in the first scenario share an explicit fixed scope.
+No model call is necessary for this first engineering checkpoint. Next add one
+model to propose validated structured records, then undertake comparative
+research evaluation. Meta-beliefs, temporal reasoning, source reliability,
+corrections, numerical confidence, specialists, and scheduling are deferred from
+this checkpoint, not removed from the broader research program.
+
+This sequence refines the near-term ordering below and the initial portion of M1;
+it does not claim completion of M1 or evidence of architectural superiority.
+See `experiments/001-belief-revision/protocol.md` for acceptance criteria and
+`docs/decisions/0001-project-layout.md` for the repository layout decision.
+
+### Broader next actions
+
 1. Select a narrow domain for the first belief-revision benchmark.
 2. Write the smallest viable schemas for the five epistemic object types.
 3. Define the event and contribution interfaces.
