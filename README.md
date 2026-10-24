@@ -28,11 +28,11 @@ These are research directions and hypotheses, not demonstrated capabilities. Hol
 
 ## Current status
 
-**Minimal persistent workspace prototype.** The repository includes a standard-library Python CLI backed by SQLite. It accepts explicitly structured reports and preserves evidence and qualitative belief revisions. No model is connected yet.
+**Minimal persistent workspace prototype.** The repository includes a standard-library Python CLI backed by SQLite. It accepts explicitly structured reports and preserves evidence and qualitative belief revisions. An optional Ollama adapter proposes report interpretations for explicit human acceptance.
 
 Initial development will use the existing Ubuntu workstation and RTX 5060 Ti 16 GB GPU. Additional hardware is conditional on measured experimental needs.
 
-The first checkpoint uses deterministic policies without model calls. One model will be connected after the persistent loop works, before introducing multiple specialists.
+The core loop uses deterministic policies without model calls. Optional model interpretation feeds accepted proposals into the same loop. Multiple specialists remain deferred.
 
 ## Run the prototype
 
@@ -67,9 +67,34 @@ Run the acceptance checks:
 PYTHONPATH=src python3 -m unittest discover -s tests -v
 ```
 
+## Interpret a natural-language report
+
+With Ollama running and a model already installed, use an existing proposition ID:
+
+```bash
+holon interpret ID --source "sensor B" --text "At T0, sensor B detected that the lab door was open." --model qwen3:14b
+```
+
+The default model is `qwen3:14b`; select an installed model with `--model`.
+Use `ollama list` to check installed models. The default server is
+`http://127.0.0.1:11434`; override with `--host` and `--timeout` (seconds,
+default 120) if needed. No model download or server startup is performed by Holon.
+The full claim, scope, and report are sent to the selected server.
+
+The command previews the relation, reason, source, original report, and model.
+Only `y` or `yes` at the acceptance prompt stores supporting/contradicting evidence.
+Declining, EOF, uncertain/unrelated results, invalid model output, or failed requests
+produce no evidence or belief update. Accepted interpretations preserve the model
+identifier, prompt version, and reason separately from the verbatim report.
+Existing databases gain an additive metadata table automatically.
+
+The model evaluates the existing claim only; it does not invent claims or establish
+truth. Ambiguous or missing observation time should yield `uncertain`. Model
+classification can still be wrong, so inspect the preview before accepting.
+
 ## Next steps
 
-1. Connect one model to propose structured records, with validation before storage.
+1. Try the local model on matching, contradictory, unrelated, and ambiguous reports.
 2. Define and run controlled comparisons against simpler baselines.
 3. Expand only when experiments justify additional mechanisms.
 

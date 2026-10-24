@@ -17,6 +17,10 @@ CREATE TABLE IF NOT EXISTS evidence (
     relation TEXT NOT NULL CHECK (relation IN ('supports', 'contradicts'))
 );
 CREATE INDEX IF NOT EXISTS evidence_proposition ON evidence(proposition_id);
+CREATE TABLE IF NOT EXISTS interpretations (
+    evidence_id TEXT PRIMARY KEY REFERENCES evidence(id),
+    model TEXT NOT NULL, reason TEXT NOT NULL, prompt_version TEXT NOT NULL
+);
 CREATE TABLE IF NOT EXISTS revisions (
     sequence INTEGER PRIMARY KEY AUTOINCREMENT,
     proposition_id TEXT NOT NULL REFERENCES propositions(id),

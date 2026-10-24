@@ -1,4 +1,4 @@
-"""Explicit structured contributions; no natural-language inference yet."""
+"""Validated contributions and atomic, provenance-preserving belief updates."""
 import json
 from datetime import datetime, timezone
 from uuid import uuid4
@@ -30,8 +30,15 @@ class Workspace:
         return identifier
 
     def add_report(self, proposition_id: str, source: str, report: str,
-                   relation: str) -> dict:
-        source, report = required(source, "source"), required(report, "report")
+                   relation: str, interpretation=None) -> dict:
+        source = required(source, "source")
+        required(report, "report")  # Validate without altering the original report.
+        if interpretation is not None:
+            from holon.inference.inference import Interpretation
+            Interpretation.validate({'relation': interpretation.relation,
+                                     'reason': interpretation.reason}, interpretation.model)
+            if interpretation.relation != relation:
+                raise ValueError("Interpretation does not match evidence relation")
         relation = Relation(relation)
         now = datetime.now(timezone.utc).isoformat()
         observation_id, evidence_id = str(uuid4()), str(uuid4())
@@ -45,6 +52,10 @@ class Workspace:
                             (observation_id, source, report, now))
             self.db.execute("INSERT INTO evidence VALUES (?, ?, ?, ?)",
                             (evidence_id, observation_id, proposition_id, relation.value))
+            if interpretation is not None:
+                self.db.execute("INSERT INTO interpretations VALUES (?, ?, ?, ?)",
+                                (evidence_id, interpretation.model, interpretation.reason,
+                                 interpretation.prompt_version))
             rows = self.db.execute(
                 "SELECT id, relation FROM evidence WHERE proposition_id = ? ORDER BY rowid",
                 (proposition_id,)).fetchall()
@@ -63,8 +74,9 @@ class Workspace:
             if row is None:
                 raise ValueError(f"Unknown proposition: {proposition_id}")
             evidence = [dict(r) for r in self.db.execute(
-                "SELECT e.id, e.relation, o.id AS observation_id, o.source, o.report, o.recorded_at "
+                "SELECT e.id, e.relation, o.id AS observation_id, o.source, o.report, o.recorded_at, i.model, i.reason, i.prompt_version "
                 "FROM evidence e JOIN observations o ON o.id = e.observation_id "
+                "LEFT JOIN interpretations i ON i.evidence_id = e.id "
                 "WHERE e.proposition_id = ? ORDER BY e.rowid", (proposition_id,))]
             history = [dict(r) for r in self.db.execute(
                 "SELECT sequence, status, evidence_ids, recorded_at, policy FROM revisions "

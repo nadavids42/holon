@@ -955,6 +955,17 @@ it does not claim completion of M1 or evidence of architectural superiority.
 See `experiments/001-belief-revision/protocol.md` for acceptance criteria and
 `docs/decisions/0001-project-layout.md` for the repository layout decision.
 
+### Accepted first model boundary — 2026-10-24
+
+An optional local Ollama adapter interprets a report against an existing scoped
+proposition. It proposes supports, contradicts, unrelated, or uncertain plus a
+reason. Supporting/contradicting proposals require explicit human acceptance;
+uncertain/unrelated results and failed calls do not update beliefs. Original
+report text remains distinct from model interpretation. Accepted contributions
+retain the model identifier, prompt version, and reason. This adds interpretation,
+not autonomous truth assessment or new proposition generation. Live model quality
+must be checked separately from mocked integration tests.
+
 ### Broader next actions
 
 1. Select a narrow domain for the first belief-revision benchmark.

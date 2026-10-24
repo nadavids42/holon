@@ -42,3 +42,16 @@ specialists, scheduling, and baseline comparisons. History inspection is provide
 a general event-replay engine is not implemented at this checkpoint.
 
 Passing establishes an engineering mechanism, not an advantage over a simpler system.
+
+## Optional interpretation acceptance checks
+
+The deterministic scenario above remains runnable without Ollama. Adapter tests
+use mocked HTTP responses and CLI tests use mocked model proposals. Verify valid
+structured responses, strict malformed-output rejection, failed connections and
+timeouts, declined proposals, and unrelated/uncertain abstentions. These paths
+must leave epistemic records unchanged. Accepted proposals must preserve verbatim
+report text and separate model/reason/prompt-version metadata across restart.
+Also verify additive schema setup on an existing prototype database and rollback
+when metadata insertion fails. These checks establish integration behavior, not
+semantic model accuracy; live matching/conflicting/unrelated/ambiguous reports
+remain a manual check using the command in the README.
