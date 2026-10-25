@@ -59,7 +59,34 @@ to select another database. Back up runtime state separately; it is ignored by G
 
 Evidence relations are supplied by the caller, not inferred from text. States
 summarize evidence presence, not truth or calibrated confidence. Scope is explicit
-caller-supplied text; temporal reasoning and corrections are not implemented.
+caller-supplied text; temporal reasoning is not implemented.
+
+### Withdraw or correct evidence
+
+Copy an `evidence_id` from report output or inspection in place of `EVIDENCE_ID`:
+
+```bash
+python3 -m holon.cli withdraw EVIDENCE_ID --actor "Nick" --reason "Incorrect interpretation"
+```
+
+Withdrawal applies to that evidence link. The original observation and link
+remain inspectable, with the actor, reason, and withdrawal time. Beliefs use
+only active evidence: withdrawing the contrary link restores `supported`;
+withdrawing every link yields `insufficient_evidence`.
+
+To withdraw a link and replace it with a corrected report atomically:
+
+```bash
+python3 -m holon.cli correct EVIDENCE_ID --actor "Nick" --reason "Sensor report misread" --source "sensor B" --text "Closed at T0" --relation supports
+```
+
+Inspection links the withdrawn evidence to its replacement and retains every
+revision. Correction supplies a caller-assigned relation; it does not invoke
+the model. Actor attribution is caller-supplied, not authenticated. A withdrawn
+link cannot be withdrawn or corrected again; correct its active replacement
+if another correction is needed. Invalid or failed corrections roll back.
+Existing databases are upgraded automatically on opening; back up runtime
+state before using a newer version against an older database.
 
 Run the acceptance checks:
 
@@ -92,11 +119,64 @@ The model evaluates the existing claim only; it does not invent claims or establ
 truth. Ambiguous or missing observation time should yield `uncertain`. Model
 classification can still be wrong, so inspect the preview before accepting.
 
+## Binary Beta projection
+
+New reports and accepted model interpretations now retain versioned stipulated
+impact metadata. The default mass is 1; it is an experimental impact unit, not
+model confidence. Reports from the same source string share a dependency cluster.
+Each cluster contributes at most one unit per sign under `binary-beta-v1`.
+Different source strings do not prove independence.
+
+```bash
+holon project ID
+holon inspect ID --projection
+holon report ID --source "sensor A" --text "Closed at T0" --relation supports --mass 0.5 --event-key reading-001
+```
+
+`project` returns replay coverage, policy/dynamics versions and input digests,
+per-evidence metadata, and a `readout` containing the Beta parameters,
+mean/variance, raw/effective mass, cluster multipliers, and conflict diagnostics.
+It does not change qualitative status or write a belief revision. Repeating a
+report/correction with the same `--event-key` and identical request returns the
+existing IDs without adding evidence. Keys are scoped to source and proposition;
+changed content or metadata under the same key is rejected. The returned status
+on a retry is the current qualitative status. Identical text without an event key
+remains a separate raw report, subject to the source-cluster cap.
+
+For reports known to share an origin across sources, give each the same explicit
+cluster and attribution:
+
+```bash
+holon report ID --source "document B" --text "Closed at T0" --relation supports --cluster-id original-document --cluster-actor "Nick" --cluster-reason "Copied from the same document"
+```
+
+`correct` also accepts `--mass` and `--event-key`. Corrections retain the original
+cluster, even when the source label changes. Source identity and attribution are
+caller assertions. Cluster reassignment and learned reliability are future work.
+
+Opening an older database performs an atomic, versioned schema upgrade without
+inventing evidence metadata. Back up the database before first use with this
+version. A proposition with missing legacy metadata reports `replay_incomplete`
+and `readout: null`. To explicitly attach unit-impact/source-cluster assumptions:
+
+```bash
+holon migrate-impacts ID --actor "Nick" --reason "Accept experimental unit-impact assumptions for legacy reports"
+holon project ID
+```
+
+That operation preserves originals and records its assumptions; coverage becomes
+`replay_approximate`. Repeating it adds nothing when no records need annotation.
+Fresh records under the declared impact contract are `replay_complete`, which
+means reconstructible under that experimental contract, not empirically calibrated.
+Policy and impact metadata are append-only. The original qualitative inspection
+and revision history remain available independently.
+
 ## Next steps
 
-1. Try the local model on matching, contradictory, unrelated, and ambiguous reports.
-2. Define and run controlled comparisons against simpler baselines.
-3. Expand only when experiments justify additional mechanisms.
+Run the deterministic adversarial scenarios and explanation checks in
+[the implementation plan](docs/binary-beta-implementation-plan.md), then use the
+results to guide temporal policy and reliability work. The pure projector,
+persistent metadata, explicit legacy annotation, and CLI integration are implemented.
 
 ## Living charter
 

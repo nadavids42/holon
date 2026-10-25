@@ -966,6 +966,19 @@ retain the model identifier, prompt version, and reason. This adds interpretatio
 not autonomous truth assessment or new proposition generation. Live model quality
 must be checked separately from mocked integration tests.
 
+### Proposed binary belief projection — 2026-10-24
+
+Develop a binary Beta projection alongside the existing qualitative belief
+states, following RFC-0002A's evidence-ledger direction. Keep supporting and
+contradicting mass, dependency clusters, conflict diagnostics, and versioned
+policy inspectable. Initial unit-impact weights and a symmetric prior are
+experimental assumptions, not calibrated probabilities. Begin without decay,
+learned reliability, or automatic commitment. Preserve withdrawal/correction
+history and label legacy replay assumptions explicitly. The implementation
+sequence and acceptance checks are in
+`docs/binary-beta-implementation-plan.md`; this is a proposed design, not a
+claim that the RFC's full validation gates have been satisfied.
+
 ### Broader next actions
 
 1. Select a narrow domain for the first belief-revision benchmark.
