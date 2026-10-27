@@ -27,6 +27,7 @@ class Observation:
     source: str
     report: str
     recorded_at: str
+    observed_at: str | None = None
 
 
 @dataclass(frozen=True)

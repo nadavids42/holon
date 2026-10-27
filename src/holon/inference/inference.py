@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import Protocol
 
 OUTCOMES = ('supports', 'contradicts', 'unrelated', 'uncertain')
-PROMPT_VERSION = 'report-relation-v1'
+PROMPT_VERSION = 'report-relation-v2'
 
 
 @dataclass(frozen=True)

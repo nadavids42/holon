@@ -1,5 +1,10 @@
 # Initial architecture
 
+For the working semantic contract and the distinction between current behavior
+and intended record lifecycles, see [epistemic-semantic-contract.md](epistemic-semantic-contract.md).
+The planned observation-time and evidence-lifecycle increments are described in
+[observation-provenance-lifecycle-plan.md](observation-provenance-lifecycle-plan.md).
+
 CLI → workspace service → SQLite.
 
 Domain definitions describe records and deterministic evidence-presence rules.
@@ -7,7 +12,10 @@ The caller explicitly identifies a proposition, its shared scope, and the report
 relation. Optional Ollama interpretation proposes a relation; explicit human acceptance is required before a supporting or contradicting link is stored.
 Observations, evidence links, and belief revisions commit in one transaction.
 Current state is the latest revision; prior revisions retain their evidence IDs.
-Recording timestamps are UTC ingestion times. Scope is caller-supplied text.
+Recording timestamps are UTC ingestion times. An optional caller-supplied
+`observed_at` records an observation instant separately, normalized to UTC;
+unknown and legacy values remain null. It does not imply subject time or change
+the current model prompt or belief policies. Scope is caller-supplied text.
 The database is a research prototype store, not a tamper-proof audit system.
 
 ## Evidence lifecycle
@@ -24,6 +32,15 @@ and no active links `insufficient_evidence`. Each new revision lists its active
 evidence IDs; old revisions preserve their original IDs and policy labels.
 Inspection returns all links with active flags and withdrawal metadata.
 
+`reinterpret` atomically withdraws one evidence link and creates a replacement
+for the same observation and proposition. It preserves the original link and
+its interpretation, retains the original cluster, attribution, migration origin,
+and (unless explicitly overridden) impact mass. Manual attribution is stored on
+the withdrawal; accepted model proposals retain their separate model rationale.
+Other links to the observation are unaffected. Missing legacy impact metadata
+requires explicit annotation before reinterpretation. Model preview happens
+outside the transaction and the original link is checked again on commit.
+
 Opening an older store adds lifecycle tables and widens the revisions status
 constraint in an explicit transaction, preserving revision sequences and content.
 This is a targeted prototype migration; a general versioned migration system
@@ -31,6 +48,16 @@ belongs to the binary Beta persistence slice. Integration tests cover migration,
 restart persistence, lifecycle commands, validation, and failed-correction rollback.
 
 ## Interpretation boundary
+
+An observation can also be recorded independently with `observe`, inspected
+with `inspect-observation`, and linked to multiple propositions with `link` or
+the preview-and-accept `interpret-observation` workflow. A new link, its impact
+metadata, and revision commit atomically. A second active link for the same
+observation/proposition is rejected after checking for an exact event-key retry.
+Historical duplicates remain inspectable and withdrawable. Link event keys use
+the existing source/proposition namespace with a distinct operation digest.
+Standalone observations are distinct per call and have no event-key retry.
+The original one-step report and interpret workflows remain atomic.
 
 `inference/inference.py` defines a provider-independent protocol and validated
 proposal. `inference/ollama.py` uses Ollama's non-streaming `/api/chat` endpoint
@@ -75,7 +102,8 @@ no decay or learned reliability. Persistent metadata and legacy replay coverage 
 
 ## Projection persistence and read contract
 
-`PRAGMA user_version=1` marks the transactional metadata migration. Original
+`PRAGMA user_version=2` includes the transactional observation-time migration;
+version 1 introduced projection metadata. Original
 records and revision IDs survive the upgrade. `projection_policies` stores an
 immutable canonical policy payload/digest; `evidence_impact` stores mass semantics,
 cluster attribution, retry identity, and optional migration origin. Attribution
@@ -90,6 +118,9 @@ the quantitative readout and reports incomplete coverage, including retained
 withdrawn records. Explicit legacy annotation produces approximate coverage.
 There is no projection cache or historical as-of query. Schema creation/upgrade
 can write on opening an old store; projection reads on an initialized store do not.
+The existing ledger digest does not include `observed_at`; it is not a complete
+provenance digest. Versioned request digests include known observation times;
+unknown-time requests retain the legacy digest format for retry compatibility.
 
 Reports and corrections commit impact metadata atomically with the existing
 lifecycle records. Source/proposition-scoped optional event keys make identical

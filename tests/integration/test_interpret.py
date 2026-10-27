@@ -23,6 +23,8 @@ class InterpretationTests(unittest.TestCase):
         request = call.call_args.args[0]
         body = json.loads(request.data)
         self.assertFalse(body['stream'])
+        self.assertFalse(body['think'])
+        self.assertEqual(result.prompt_version, 'report-relation-v2')
         self.assertEqual(json.loads(body['messages'][1]['content'])['report'], 'open at T0')
         for value in [{}, {'relation': 'yes', 'reason': 'x'},
                       {'relation': 'supports', 'reason': ''},

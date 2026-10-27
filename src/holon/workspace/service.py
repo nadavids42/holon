@@ -1,5 +1,6 @@
 """Validated contributions and atomic, provenance-preserving belief updates."""
 import json
+import re
 from dataclasses import asdict
 from holon.domain.projection import ProjectionEvidence, ProjectionPolicy, project_binary, DYNAMICS_VERSION
 from holon.workspace.metadata import SEMANTICS, canonical, digest, source_cluster
@@ -17,6 +18,37 @@ def required(value: str, label: str) -> str:
     return value
 
 
+_OBSERVED_AT = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?(?:Z|[+-]\d{2}:\d{2})\Z")
+
+
+def normalize_observed_at(value):
+    """Normalize an explicitly supplied instant; None means unknown."""
+    if value is None:
+        return None
+    if not isinstance(value, str) or not _OBSERVED_AT.fullmatch(value):
+        raise ValueError("observed_at must be an ISO timestamp with seconds and UTC offset")
+    try:
+        normalized = value.replace('Z', '+00:00')
+        # Python 3.10 accepts fractional seconds only in certain lengths.
+        normalized = re.sub(r'\.(\d{1,6})(?=[+-]\d{2}:\d{2}$)',
+                            lambda match: '.' + match.group(1).ljust(6, '0'), normalized)
+        timestamp = datetime.fromisoformat(normalized)
+        # fromisoformat accepts some out-of-range offset components (e.g. +01:60).
+        offset = value[-6:] if not value.endswith('Z') else None
+        if offset and (int(offset[1:3]) > 23 or int(offset[4:6]) > 59):
+            raise ValueError("Invalid UTC offset")
+        return timestamp.astimezone(timezone.utc).isoformat(timespec='microseconds')
+    except (ValueError, OverflowError) as error:
+        raise ValueError("Invalid observed_at timestamp") from error
+
+
+def request_digest(payload, observed_at):
+    # Preserve version-1 digests for unknown times, including existing event keys.
+    if observed_at is None:
+        return digest(canonical(payload))
+    return 'v2:' + digest(canonical({'operation_request': payload, 'observed_at': observed_at}))
+
+
 class Workspace:
     def __init__(self, path):
         self.db = connect(path)
@@ -32,25 +64,104 @@ class Workspace:
                             (identifier, claim, scope))
         return identifier
 
-    def add_report(self, proposition_id: str, source: str, report: str,
-                   relation: str, interpretation=None, *, mass=1.0, event_key=None,
-                   cluster_id=None, cluster_actor=None, cluster_reason=None) -> dict:
-        source = required(source, "source")
-        required(report, "report")  # Validate without altering the original report.
+    def record_observation(self, source, report, *, observed_at=None):
+        source = required(source, 'source')
+        required(report, 'report')
+        observed_at = normalize_observed_at(observed_at)
+        identifier = str(uuid4())
+        now = datetime.now(timezone.utc).isoformat()
+        with self.db:
+            self.db.execute('INSERT INTO observations (id, source, report, recorded_at, observed_at) VALUES (?, ?, ?, ?, ?)',
+                            (identifier, source, report, now, observed_at))
+        return identifier
+
+    def inspect_observation(self, observation_id):
+        with self.db:
+            self.db.execute('BEGIN')
+            observation = self.db.execute('SELECT * FROM observations WHERE id=?', (observation_id,)).fetchone()
+            if observation is None:
+                raise ValueError(f'Unknown observation: {observation_id}')
+            links = [dict(row) for row in self.db.execute(
+                'SELECT e.id AS evidence_id, e.proposition_id, e.relation, w.recorded_at AS withdrawn_at, '
+                'w.actor AS withdrawal_actor, w.reason AS withdrawal_reason, w.replacement_evidence_id '
+                'FROM evidence e LEFT JOIN withdrawals w ON w.evidence_id=e.id '
+                'WHERE e.observation_id=? ORDER BY e.rowid', (observation_id,))]
+            for link in links:
+                link['active'] = link['withdrawn_at'] is None
+            return {'observation': dict(observation), 'links': links}
+
+    def link_observation(self, observation_id, proposition_id, relation, interpretation=None, *,
+                         mass=1.0, event_key=None, cluster_id=None, cluster_actor=None, cluster_reason=None):
+        relation = Relation(relation)
+        self._validate_interpretation(interpretation, relation.value)
+        if event_key is not None:
+            event_key = required(event_key, 'event key')
+        now = datetime.now(timezone.utc).isoformat()
+        with self.db:
+            self.db.execute('BEGIN IMMEDIATE')
+            observation = self.db.execute('SELECT source FROM observations WHERE id=?', (observation_id,)).fetchone()
+            if observation is None:
+                raise ValueError(f'Unknown observation: {observation_id}')
+            if not self.db.execute('SELECT 1 FROM propositions WHERE id=?', (proposition_id,)).fetchone():
+                raise ValueError(f'Unknown proposition: {proposition_id}')
+            source = observation['source']
+            cluster, actor, reason = self._cluster(source, cluster_id, cluster_actor, cluster_reason)
+            mass = ProjectionEvidence('validate', proposition_id, cluster, relation, mass).mass
+            request = 'link-v1:' + digest(canonical({'operation': 'link', 'observation_id': observation_id,
+                'proposition_id': proposition_id, 'relation': relation.value, 'mass': mass, 'cluster': cluster,
+                'actor': actor, 'reason': reason, 'interpretation': asdict(interpretation) if interpretation else None}))
+            if event_key is not None:
+                prior = self.db.execute('SELECT m.request_digest, e.id, e.observation_id FROM evidence_impact m JOIN evidence e ON e.id=m.evidence_id WHERE m.proposition_id=? AND m.source=? AND m.event_key=?',
+                                        (proposition_id, source, event_key)).fetchone()
+                if prior is not None:
+                    if prior['request_digest'] != request:
+                        raise ValueError('Event key reused with different content or metadata')
+                    status = self.db.execute('SELECT status FROM revisions WHERE proposition_id=? ORDER BY sequence DESC LIMIT 1', (proposition_id,)).fetchone()[0]
+                    return {'observation_id': prior['observation_id'], 'evidence_id': prior['id'], 'status': status}
+            active = self.db.execute('SELECT 1 FROM evidence e LEFT JOIN withdrawals w ON w.evidence_id=e.id WHERE e.observation_id=? AND e.proposition_id=? AND w.evidence_id IS NULL LIMIT 1',
+                                     (observation_id, proposition_id)).fetchone()
+            if active:
+                raise ValueError('Observation already has active evidence for this proposition')
+            evidence_id = str(uuid4())
+            self._insert_link(evidence_id, observation_id, proposition_id, relation, interpretation,
+                              source, mass, cluster, actor, reason, event_key, request)
+            status = self._revise(proposition_id, now)
+        return {'observation_id': observation_id, 'evidence_id': evidence_id, 'status': status}
+
+    @staticmethod
+    def _validate_interpretation(interpretation, relation):
         if interpretation is not None:
             from holon.inference.inference import Interpretation
             Interpretation.validate({'relation': interpretation.relation,
                                      'reason': interpretation.reason}, interpretation.model)
             if interpretation.relation != relation:
-                raise ValueError("Interpretation does not match evidence relation")
+                raise ValueError('Interpretation does not match evidence relation')
+
+    def _insert_link(self, evidence_id, observation_id, proposition_id, relation, interpretation,
+                     source, mass, cluster, actor, reason, event_key, request, migration_id=None):
+        self.db.execute('INSERT INTO evidence (id, observation_id, proposition_id, relation) VALUES (?, ?, ?, ?)',
+                        (evidence_id, observation_id, proposition_id, relation.value))
+        if interpretation is not None:
+            self.db.execute('INSERT INTO interpretations (evidence_id, model, reason, prompt_version) VALUES (?, ?, ?, ?)',
+                            (evidence_id, interpretation.model, interpretation.reason, interpretation.prompt_version))
+        self._impact(evidence_id, proposition_id, source, mass, cluster, actor, reason, event_key, request, migration_id)
+
+    def add_report(self, proposition_id: str, source: str, report: str,
+                   relation: str, interpretation=None, *, mass=1.0, event_key=None,
+                   cluster_id=None, cluster_actor=None, cluster_reason=None,
+                   observed_at=None) -> dict:
+        source = required(source, "source")
+        required(report, "report")  # Validate without altering the original report.
         relation = Relation(relation)
+        self._validate_interpretation(interpretation, relation.value)
         cluster_id, cluster_actor, cluster_reason = self._cluster(source, cluster_id, cluster_actor, cluster_reason)
         mass = ProjectionEvidence('validate', proposition_id, cluster_id, relation, mass).mass
         if event_key is not None:
             event_key = required(event_key, 'event key')
-        request = digest(canonical({'report': report, 'relation': relation.value, 'mass': mass,
+        observed_at = normalize_observed_at(observed_at)
+        request = request_digest({'report': report, 'relation': relation.value, 'mass': mass,
                                    'cluster': cluster_id, 'actor': cluster_actor, 'reason': cluster_reason,
-                                   'interpretation': asdict(interpretation) if interpretation else None}))
+                                   'interpretation': asdict(interpretation) if interpretation else None}, observed_at)
         now = datetime.now(timezone.utc).isoformat()
         observation_id, evidence_id = str(uuid4()), str(uuid4())
         with self.db:
@@ -67,16 +178,10 @@ class Workspace:
                         raise ValueError('Event key reused with different content or metadata')
                     status = self.db.execute("SELECT status FROM revisions WHERE proposition_id=? ORDER BY sequence DESC LIMIT 1", (proposition_id,)).fetchone()[0]
                     return {'observation_id': prior['observation_id'], 'evidence_id': prior['id'], 'status': status}
-            self.db.execute("INSERT INTO observations (id, source, report, recorded_at) VALUES (?, ?, ?, ?)",
-                            (observation_id, source, report, now))
-            self.db.execute("INSERT INTO evidence (id, observation_id, proposition_id, relation) VALUES (?, ?, ?, ?)",
-                            (evidence_id, observation_id, proposition_id, relation.value))
-            if interpretation is not None:
-                self.db.execute("INSERT INTO interpretations (evidence_id, model, reason, prompt_version) VALUES (?, ?, ?, ?)",
-                                (evidence_id, interpretation.model, interpretation.reason,
-                                 interpretation.prompt_version))
-            self._impact(evidence_id, proposition_id, source, mass, cluster_id,
-                         cluster_actor, cluster_reason, event_key, request)
+            self.db.execute("INSERT INTO observations (id, source, report, recorded_at, observed_at) VALUES (?, ?, ?, ?, ?)",
+                            (observation_id, source, report, now, observed_at))
+            self._insert_link(evidence_id, observation_id, proposition_id, relation, interpretation,
+                              source, mass, cluster_id, cluster_actor, cluster_reason, event_key, request)
             status = self._revise(proposition_id, now)
         return {"observation_id": observation_id, "evidence_id": evidence_id,
                 "status": status}
@@ -94,8 +199,81 @@ class Workspace:
             (proposition_id, status, json.dumps([r["id"] for r in rows]), now, "active-presence-v2"))
         return status
 
+    def evidence_context(self, evidence_id):
+        """Read the observation and proposition for an evidence link in one snapshot."""
+        with self.db:
+            self.db.execute('BEGIN')
+            row = self.db.execute(
+                'SELECT e.id AS evidence_id, e.relation, e.observation_id, e.proposition_id, '
+                'o.source, o.report, o.observed_at, p.claim, p.scope, '
+                'w.recorded_at AS withdrawn_at FROM evidence e '
+                'JOIN observations o ON o.id=e.observation_id '
+                'JOIN propositions p ON p.id=e.proposition_id '
+                'LEFT JOIN withdrawals w ON w.evidence_id=e.id WHERE e.id=?',
+                (evidence_id,)).fetchone()
+            if row is None:
+                raise ValueError(f'Unknown evidence: {evidence_id}')
+            return dict(row)
+
+    def reinterpret_evidence(self, evidence_id, relation, actor, reason, *, mass=None,
+                             event_key=None, interpretation=None):
+        """Atomically supersede one link while retaining its observation and provenance."""
+        actor, reason = required(actor, 'actor'), required(reason, 'reason')
+        relation = Relation(relation)
+        self._validate_interpretation(interpretation, relation.value)
+        if event_key is not None:
+            event_key = required(event_key, 'event key')
+        if mass is not None:
+            mass = ProjectionEvidence('validate', 'validate', 'validate', relation, mass).mass
+        now = datetime.now(timezone.utc).isoformat()
+        with self.db:
+            self.db.execute('BEGIN IMMEDIATE')
+            old = self.db.execute(
+                'SELECT e.observation_id, e.proposition_id, o.source, m.mass, m.semantics, '
+                'm.cluster_id, m.cluster_actor, m.cluster_reason, m.migration_id '
+                'FROM evidence e JOIN observations o ON o.id=e.observation_id '
+                'LEFT JOIN evidence_impact m ON m.evidence_id=e.id WHERE e.id=?',
+                (evidence_id,)).fetchone()
+            if old is None:
+                raise ValueError(f'Unknown evidence: {evidence_id}')
+            request = 'reinterpret-v1:' + digest(canonical({
+                'operation': 'reinterpret', 'evidence_id': evidence_id, 'relation': relation.value,
+                'actor': actor, 'reason': reason, 'mass_override': mass,
+                'interpretation': asdict(interpretation) if interpretation else None}))
+            if event_key is not None:
+                prior = self.db.execute(
+                    'SELECT m.request_digest, e.id, e.observation_id FROM evidence_impact m '
+                    'JOIN evidence e ON e.id=m.evidence_id WHERE m.proposition_id=? AND m.source=? AND m.event_key=?',
+                    (old['proposition_id'], old['source'], event_key)).fetchone()
+                if prior is not None:
+                    if prior['request_digest'] != request:
+                        raise ValueError('Event key reused with different content or metadata')
+                    status = self.db.execute('SELECT status FROM revisions WHERE proposition_id=? ORDER BY sequence DESC LIMIT 1', (old['proposition_id'],)).fetchone()[0]
+                    return {'proposition_id': old['proposition_id'], 'observation_id': prior['observation_id'],
+                            'withdrawn_evidence_id': evidence_id, 'replacement_evidence_id': prior['id'], 'status': status}
+            if self.db.execute('SELECT 1 FROM withdrawals WHERE evidence_id=?', (evidence_id,)).fetchone():
+                raise ValueError(f'Evidence already withdrawn: {evidence_id}')
+            if old['mass'] is None:
+                raise ValueError('Evidence impact metadata is missing; annotate legacy impacts before reinterpretation')
+            if old['semantics'] != SEMANTICS or not old['cluster_id']:
+                raise ValueError('Evidence impact metadata has unsupported or invalid semantics')
+            other = self.db.execute('SELECT 1 FROM evidence e LEFT JOIN withdrawals w ON w.evidence_id=e.id WHERE e.observation_id=? AND e.proposition_id=? AND e.id<>? AND w.evidence_id IS NULL LIMIT 1',
+                                    (old['observation_id'], old['proposition_id'], evidence_id)).fetchone()
+            if other:
+                raise ValueError('Another active evidence link exists for this observation and proposition')
+            replacement_id = str(uuid4())
+            self._insert_link(replacement_id, old['observation_id'], old['proposition_id'], relation,
+                              interpretation, old['source'], old['mass'] if mass is None else mass,
+                              old['cluster_id'], old['cluster_actor'], old['cluster_reason'], event_key,
+                              request, migration_id=old['migration_id'])
+            self.db.execute('INSERT INTO withdrawals (evidence_id, actor, reason, recorded_at, replacement_evidence_id) VALUES (?, ?, ?, ?, ?)',
+                            (evidence_id, actor, reason, now, replacement_id))
+            status = self._revise(old['proposition_id'], now)
+        return {'proposition_id': old['proposition_id'], 'observation_id': old['observation_id'],
+                'withdrawn_evidence_id': evidence_id, 'replacement_evidence_id': replacement_id, 'status': status}
+
     def withdraw_evidence(self, evidence_id, actor, reason, *, report=None,
-                          source=None, relation=None, mass=1.0, event_key=None):
+                          source=None, relation=None, mass=1.0, event_key=None, observed_at=None):
         """Withdraw a link; optionally replace it atomically with a corrected report.
 
         Withdrawal concerns this evidence link, not every use of its observation.
@@ -103,19 +281,20 @@ class Workspace:
         """
         actor, reason = required(actor, "actor"), required(reason, "reason")
         correcting = report is not None
+        observed_at = normalize_observed_at(observed_at)
         if correcting:
             required(report, "report")
             source = required(source, "source")
             relation = Relation(relation).value
             mass = ProjectionEvidence("validate", "validate", "validate", relation, mass).mass
-        elif source is not None or relation is not None:
+        elif source is not None or relation is not None or observed_at is not None:
             raise ValueError("A correction requires a report")
         if event_key is not None:
             if not correcting:
                 raise ValueError('Event key requires a correction')
             event_key = required(event_key, 'event key')
-        request = digest(canonical({'corrects': evidence_id, 'actor': actor, 'reason': reason,
-                                   'report': report, 'source': source, 'relation': relation, 'mass': mass})) if correcting else None
+        request = request_digest({'corrects': evidence_id, 'actor': actor, 'reason': reason,
+                                   'report': report, 'source': source, 'relation': relation, 'mass': mass}, observed_at) if correcting else None
         now = datetime.now(timezone.utc).isoformat()
         with self.db:
             self.db.execute("BEGIN IMMEDIATE")
@@ -139,8 +318,8 @@ class Workspace:
             observation_id = None
             if correcting:
                 observation_id, replacement_id = str(uuid4()), str(uuid4())
-                self.db.execute("INSERT INTO observations (id, source, report, recorded_at) VALUES (?, ?, ?, ?)",
-                                (observation_id, source, report, now))
+                self.db.execute("INSERT INTO observations (id, source, report, recorded_at, observed_at) VALUES (?, ?, ?, ?, ?)",
+                                (observation_id, source, report, now, observed_at))
                 self.db.execute("INSERT INTO evidence (id, observation_id, proposition_id, relation) VALUES (?, ?, ?, ?)",
                                 (replacement_id, observation_id, old["proposition_id"], relation))
                 lineage = self.db.execute('SELECT cluster_id FROM evidence_impact WHERE evidence_id=?', (evidence_id,)).fetchone()
@@ -163,7 +342,7 @@ class Workspace:
             if row is None:
                 raise ValueError(f"Unknown proposition: {proposition_id}")
             evidence = [dict(r) for r in self.db.execute(
-                "SELECT e.id, e.relation, o.id AS observation_id, o.source, o.report, o.recorded_at, i.model, i.reason, i.prompt_version, "
+                "SELECT e.id, e.relation, o.id AS observation_id, o.source, o.report, o.recorded_at, o.observed_at, i.model, i.reason, i.prompt_version, "
                 "w.actor AS withdrawal_actor, w.reason AS withdrawal_reason, "
                 "w.recorded_at AS withdrawn_at, w.replacement_evidence_id "
                 "FROM evidence e JOIN observations o ON o.id = e.observation_id "

@@ -1,6 +1,9 @@
 # Experiment 001: Minimal persistent belief revision
 
 Status: engineering acceptance scenario, not a comparative research benchmark.
+This protocol records the original deterministic checkpoint. Later capabilities
+are documented in `docs/architecture.md` and the integrated lifecycle scenario
+in `tests/integration/test_lifecycle_scenario.py`.
 
 ## Goal
 Demonstrate structured observation → evidence → belief revision, with durable
@@ -35,7 +38,7 @@ must verify persistence across actual process exits. Run from the repository roo
 PYTHONPATH=src python3 -m unittest discover -s tests -v
 ```
 
-## Deferred
+## Deferred at this checkpoint
 Model interpretation, meta-beliefs, correction/retraction, temporal reasoning,
 source reliability, deduplication, numerical confidence, replay tooling,
 specialists, scheduling, and baseline comparisons. History inspection is provided;

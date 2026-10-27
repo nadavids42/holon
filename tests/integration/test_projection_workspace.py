@@ -75,7 +75,7 @@ class PersistentProjectionTests(unittest.TestCase):
             self.assertEqual(w.migrate_impacts('p', 'Nick', 'Retry')['annotated_count'], 0)
             self.assertEqual(w.project('p')['replay_coverage'], 'replay_approximate')
             self.assertEqual(w.project('p')['readout']['effective_support'], 1)
-            self.assertEqual(w.db.execute('PRAGMA user_version').fetchone()[0], 1)
+            self.assertEqual(w.db.execute('PRAGMA user_version').fetchone()[0], 2)
             self.assertEqual(w.db.execute('PRAGMA foreign_key_check').fetchall(), [])
         finally:
             w.close()

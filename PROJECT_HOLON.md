@@ -981,6 +981,15 @@ claim that the RFC's full validation gates have been satisfied.
 
 ### Broader next actions
 
+The working semantic contract for observations, proposition identity, evidence,
+interpretations, time, corrections, and belief readouts is documented in
+`docs/epistemic-semantic-contract.md`. It distinguishes current implementation
+from intended behavior and leaves detailed schema and API choices open.
+Observation-time provenance, observation reuse, and atomic reinterpretation are
+implemented; their cross-process lifecycle is exercised against a migrated
+database copy. Temporal inference and historical quantitative replay remain
+open work, not implied by storing an observation time.
+
 1. Select a narrow domain for the first belief-revision benchmark.
 2. Write the smallest viable schemas for the five epistemic object types.
 3. Define the event and contribution interfaces.
