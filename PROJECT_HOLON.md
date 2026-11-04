@@ -938,6 +938,39 @@ All implementation details not fixed above—including exact model assignments, 
 
 ## 14. Immediate next actions
 
+### Accepted research and interface sequence — 2026-11-03
+
+The next bounded study is **evidence revision under incomplete provenance**:
+whether selective repair reduces obsolete actions while retaining valid knowledge
+compared with rereading available sources. Extend the current Python/SQLite/Ollama
+workspace; do not rebuild it or pursue all five research opportunities at once.
+
+The active sequence, progress tracker, exit criteria, and exact next action are in
+[the evidence revision research plan](docs/evidence-revision-research-plan.md).
+That plan supersedes older near-term ordering below where they differ; historical
+checkpoints and the broader charter remain intact. At adoption, only the plan is
+complete: the reviewed code baseline is `a98c576` with 48 passing engineering tests.
+
+First define the protocol and finish adversarial projection validation, then build
+the replayable environment and inexpensive baselines. Add a minimal local browser
+GUI over shared service operations early (step 5), followed by derivations,
+selective repair, incomplete provenance, bounded temporal semantics, and language
+extraction. Grounded chat follows in step 10. A UI is not a prerequisite for
+research; visual polish must not block controlled evaluation.
+
+Preserve the distinction between replay coverage and provenance completeness,
+copy lineage and logical dependence, and experimental impact and calibrated
+probability. Retain simpler baselines and report negative results. Implementation
+of this sequence, deployment, and migration of the working database have not
+occurred merely because the plan has been accepted.
+
+Progress update, 2026-11-03: step 1 is complete as
+[experiment protocol draft v0.1](experiments/003-evidence-revision/protocol.md),
+including the bounded world, comparisons, metrics, budgets, practical decision
+thresholds, and stop conditions. No research code or experiments have been run.
+The next action is step 2's adversarial Beta validation; consult the active plan
+for the maintained checkpoint and remaining pre-run decisions.
+
 ### Accepted implementation sequence — 2026-10-24
 
 Start with the smallest persistent belief-revision loop before building the full

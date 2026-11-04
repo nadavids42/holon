@@ -248,12 +248,25 @@ and revision history remain available independently.
 
 ## Next steps
 
+The accepted next direction is **evidence revision under incomplete provenance**.
+Start with [the research and interface plan](docs/evidence-revision-research-plan.md)
+for current progress, ordered steps, exit criteria, and the exact next action.
+[The roadmap](docs/roadmap.md) provides the short checkpoint.
+
+Step 1 is complete as
+[experiment protocol draft v0.1](experiments/003-evidence-revision/protocol.md);
+no comparative benchmark code or runs exist yet. Next, finish the deterministic
+adversarial checks in
+[the Beta implementation plan](docs/binary-beta-implementation-plan.md), then
+build the small research environment.
+A minimal local browser GUI is planned early in the work, with grounded chat
+later; the research does not require a UI first.
+
 The integrated lifecycle scenario in `tests/integration/test_lifecycle_scenario.py`
-checks observation reuse and reinterpretation across CLI processes on a migrated
-database copy. Continue with the deterministic adversarial scenarios and
-explanation checks in [the implementation plan](docs/binary-beta-implementation-plan.md),
-then use the results to guide temporal policy and reliability work. Observation
-time is recorded but does not yet drive temporal reasoning.
+already checks observation reuse and reinterpretation across CLI processes on a
+migrated database copy. Observation time is recorded but does not yet drive
+temporal reasoning. Derived-conclusion repair and incomplete-lineage handling
+remain planned capabilities.
 
 ## Living charter
 
