@@ -968,8 +968,24 @@ Progress update, 2026-11-03: step 1 is complete as
 [experiment protocol draft v0.1](experiments/003-evidence-revision/protocol.md),
 including the bounded world, comparisons, metrics, budgets, practical decision
 thresholds, and stop conditions. No research code or experiments have been run.
-The next action is step 2's adversarial Beta validation; consult the active plan
-for the maintained checkpoint and remaining pre-run decisions.
+At that checkpoint the next action was step 2's adversarial Beta validation.
+
+Progress update, 2026-11-05: step 2 is complete in
+[experiment 002](experiments/002-binary-beta/README.md). All 12 adversarial
+scenarios and 51 repository tests pass; a saved explanation traces projection
+values to evidence. No core semantics or runtime database were changed. This is
+engineering validation, not a comparative research result. Implementing step
+3's small replayable project environment and deterministic scorer for experiment
+003 was the next action at that checkpoint.
+
+Progress update, 2026-11-05: step 3 is complete in
+[experiment 003](experiments/003-evidence-revision/README.md), with public/private
+schemas, a seeded candidate catalogue, prefix-only replay/checkpoints, and offline
+action/control-audit scoring. Sixteen new tests bring the suite to 67 passing
+tests. No model or comparative method evaluation was run, and Holon's core is
+unchanged. Next implement step 4's baseline adapters, shared decision interface,
+method-state persistence and cost counters; review candidate family grouping
+before freezing any pilot. The active plan contains the maintained checkpoint.
 
 ### Accepted implementation sequence — 2026-10-24
 
@@ -1040,3 +1056,15 @@ open work, not implied by storing an observation time.
 Holon is an ambitious architecture pursued with a deliberately skeptical method. Its animating idea is that persistent, organized, evidence-sensitive interaction among specialized processes may matter as much as the intelligence of any one process. Its discipline is to treat that idea as a falsifiable hypothesis.
 
 The project succeeds in its first phase not by appearing mind-like, but by becoming measurable: it should know what it observed, distinguish that from what it inferred, retain why it believes what it believes, expose what remains contradictory or unknown, allocate attention deliberately, and act only within explicit authority. Everything beyond that must be earned experimentally.
+
+
+Progress update, 2026-11-06: step 4 is complete in
+[experiment 003's structured baselines](experiments/003-evidence-revision/baselines.md).
+H0 runs the unchanged Workspace service alongside local LWW, source-filtered
+rereading and full-rebuild implementations. All use the same deterministic actor,
+public-prefix subprocess harness and offline scorer, with persistent method
+state, logical budgets/cost vectors and isolated audits. Thirteen new tests bring
+the repository suite to 80 passing tests. Development smoke runs are engineering
+acceptance, not a research result. Generator v1.1 fixes an omitted valid room-audit
+citation in a shared report, preserving public schedules. Next: step 5's minimal
+browser workspace (UI-1 through UI-5); grounded chat remains later work.

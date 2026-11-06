@@ -1,0 +1,33 @@
+{
+  "fixture_version": "binary-beta-adversarial-v1",
+  "seed": 42,
+  "policy": {"version": "binary-beta-v1", "alpha0": 1.0, "beta0": 1.0, "cluster_cap": 1.0},
+  "cases": [
+    {"name": "prior", "groups": [], "expected": {"alpha": 1, "beta": 1, "mean": 0.5, "variance": 0.08333333333333333, "evidence_strength": 0, "opposing_mass": 0, "active_count": 0}},
+    {"name": "balanced", "groups": [
+      {"id": "support", "count": 10, "cluster": "positive", "independent": true, "relation": "supports", "mass": 1},
+      {"id": "opposition", "count": 10, "cluster": "negative", "independent": true, "relation": "contradicts", "mass": 1}
+    ], "expected": {"alpha": 11, "beta": 11, "mean": 0.5, "variance": 0.010869565217391304, "evidence_strength": 20, "opposing_mass": 10, "conflict_balance": 1}},
+    {"name": "one", "groups": [
+      {"id": "one", "cluster": "origin", "relation": "supports", "mass": 1}
+    ], "expected": {"mean": 0.6666666666666666, "variance": 0.05555555555555555, "effective_support": 1, "evidence_strength": 1}},
+    {"name": "independent", "groups": [
+      {"id": "independent", "count": 10, "cluster": "origin", "independent": true, "relation": "supports", "mass": 1}
+    ], "expected": {"alpha": 11, "beta": 1, "mean": 0.9166666666666666, "effective_support": 10, "evidence_strength": 10}},
+    {"name": "copies", "groups": [
+      {"id": "copy", "count": 500, "cluster": "origin", "relation": "supports", "mass": 1}
+    ], "expected": {"raw_support": 500, "effective_support": 1, "mean": 0.6666666666666666, "active_count": 500}},
+    {"name": "both_signs", "groups": [
+      {"id": "positive", "cluster": "origin", "relation": "supports", "mass": 10},
+      {"id": "negative", "cluster": "origin", "relation": "contradicts", "mass": 20}
+    ], "expected": {"raw_support": 10, "raw_contradiction": 20, "effective_support": 1, "effective_contradiction": 1, "mean": 0.5, "conflict_balance": 1}},
+    {"name": "explanation", "groups": [
+      {"id": "a", "cluster": "shared", "relation": "supports", "mass": 0.75},
+      {"id": "b", "cluster": "shared", "relation": "supports", "mass": 0.75},
+      {"id": "c", "cluster": "opposing", "relation": "contradicts", "mass": 0.5},
+      {"id": "d", "cluster": "old", "relation": "contradicts", "mass": 9, "active": false, "exclusion_reason": "Also excluded; withdrawal takes precedence"},
+      {"id": "e", "cluster": "pending", "relation": "supports", "mass": 4, "exclusion_reason": "Not eligible in this supplied snapshot"},
+      {"id": "f", "cluster": "zero", "relation": "supports", "mass": 0}
+    ], "expected": {"alpha": 2, "beta": 1.5, "mean": 0.5714285714285714, "variance": 0.05442176870748299, "evidence_strength": 1.5, "posterior_concentration": 3.5, "opposing_mass": 0.5, "conflict_balance": 0.6666666666666666, "active_count": 5, "withdrawn_count": 1, "excluded_count": 1}}
+  ]
+}

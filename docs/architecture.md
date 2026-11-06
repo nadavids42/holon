@@ -127,3 +127,50 @@ lifecycle records. Source/proposition-scoped optional event keys make identical
 retries idempotent; conflicting requests fail. Corrections preserve lineage,
 including source-based lineage for legacy links. Explicit shared clusters require
 actor/reason and share a namespace distinct from automatic source clusters.
+
+## Adversarial validation checkpoint
+
+[Experiment 002](../experiments/002-binary-beta/README.md) validates this contract
+without changing the core implementation. Its 12 scenarios exercise fixed
+projection inputs, dependency caps, raw-partition recombination, retries,
+correction/reinterpretation lineage, withdrawal recovery, CLI restarts, read-only
+inspection, legacy annotation, numeric range errors, and transaction rollback.
+An exact rational reference checks readout explanations independently of the
+projector's floating-point aggregation. Run reports retain input records,
+checkpoints, versions, and source hashes; all database work uses temporary stores.
+
+The saved example includes a supplied domain-level exclusion. The workspace still
+does not persist exclusions or propagate derived-conclusion eligibility. An
+active zero-mass link may yield qualitative `supported` at the quantitative prior;
+an above-0.5 mean may coexist with `contested`. Those are documented semantic
+differences, not reasons to replace either readout with a truth verdict.
+
+This checkpoint establishes bounded engineering acceptance, not calibration,
+source independence, historical as-of replay, or comparative research efficacy.
+
+## Experiment-only replay environment
+
+`experiments/003-evidence-revision/revision_world/` is independent of the core
+workspace. It generates immutable JSON source/task schedules and separate private
+truth/lineage/scoring records, with a canonical digest binding each pair. A
+public-only replay driver exposes detached event prefixes, stops at unanswered
+tasks, and requires checkpoint restoration after task four. Actual process
+restart behavior is exercised by integration tests.
+
+The offline scorer distinguishes physical correctness from valid justification,
+including finite action choices, available-source boundaries, sufficient AND/OR
+support sets, unresolved tasks, and retained-control audits. It is not an agent
+or a belief policy. The generator's subject-time histories do not implement
+temporal inference in `Workspace`.
+
+Methods must receive only serialized views. Complete schedules, private labels,
+seeds/manifests and scorer outputs belong to the trusted driver/evaluator. This
+is a tested application data boundary, not a sandbox against malicious code.
+The experiment now includes H0 (actual Workspace), LWW, filtered rereading and
+full rebuilding, a shared deterministic actor, subprocess workers, persisted
+method state, logical budgets/cost vectors and detached audits. The trusted
+`compare.py` driver scores only after each method finishes. It refuses validation
+families; the application boundary is not OS isolation. H0 gains no graph repair
+or temporal adjudication. See the [baseline contract](../experiments/003-evidence-revision/baselines.md)
+for cost definitions, limitations and next work, and the
+[schema contract](../experiments/003-evidence-revision/schema.md).

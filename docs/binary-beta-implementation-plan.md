@@ -183,6 +183,16 @@ active records, and failed contributions change neither view.
 
 ## Slice 4 — adversarial checks and usable explanations
 
+Completed 2026-11-05: [experiment 002](../experiments/002-binary-beta/README.md)
+contains fixed projection fixtures, a literal legacy schema, twelve deterministic
+acceptance scenarios, JSON reporting and a
+[saved worked explanation](../experiments/002-binary-beta/example.md).
+All 12 scenarios and 51 repository tests pass. Runner integration tests also
+confirm nonzero failure reporting under Python optimization and reproducible
+fixture readouts. All database work uses temporary stores; core implementation
+and the user's runtime database are unchanged. The requirements below are retained
+as the acceptance contract. Proceed to step 3 of the active research plan.
+
 Add `experiments/002-binary-beta/` with deterministic fixtures, expected
 properties and a small runner recording policy/dynamics versions and results.
 No Ollama call is required. Fix acceptance criteria before running it.

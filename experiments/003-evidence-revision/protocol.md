@@ -1,7 +1,12 @@
 # Experiment 003: Evidence revision under incomplete provenance
 
 Status: protocol draft v0.1, 2026-11-03 (America/New_York).
-No benchmark implementation or experiment results exist at this checkpoint.
+Implementation checkpoint, 2026-11-06: environment and initial Track S H0/LWW/RR/RB
+methods are implemented with a common actor, persisted process-boundary state,
+cost accounting and isolated audits. See [baselines.md](baselines.md) for exact
+method semantics, commands, limits and the generator v1.1 label amendment.
+Development engineering comparisons exist; no frozen evaluation or selective
+repair result exists. Research thresholds remain v0.1.
 This is a local pre-result design, not an externally registered preregistration.
 
 Parent: [research plan and progress tracker](../../docs/evidence-revision-research-plan.md).
@@ -428,10 +433,15 @@ and report factual guesses separately.
 
 ## 12. Deliverables, freeze checklist, and immediate handoff
 
-Planned artifacts under this experiment directory are a generator, public/private
-fixture schemas, method adapters, deterministic scorer, run manifest specification,
-runner, and result-analysis script. **None exists yet.** Record executable
-commands only once they have been implemented and verified. Generated databases,
+Implemented artifacts under this directory are the seeded generator, strict
+public/private JSON validators, replay driver/checkpoints, offline deterministic
+action/control-audit scorers, command-line tools, generation source/hash manifest,
+and the initial Track S method adapters, actor, comparison manifest and cost
+instrumentation. Longitudinal metrics, Track E and statistical result-analysis
+code remain planned. The
+36 candidate configurations and their split designations require semantic/family
+review before any pilot is frozen. Record executable commands only once they
+have been implemented and verified. Generated databases,
 model traces, and run outputs belong in ignored runtime locations; commit
 reproducible fixtures/configuration and protocols when authorized.
 
@@ -455,18 +465,24 @@ world change, and an unresolvable visible conflict. Reruns using saved accepted
 inputs must reproduce deterministic state and scores; rerunning a model need not
 reproduce its proposals byte-for-byte.
 
-**Current handoff:** step 1's protocol draft is complete. Next implement
-`experiments/002-binary-beta/` according to slice 4 of the Beta plan. Then return
-here for the small environment (step 3), baseline adapters (step 4), and subsequent
-repair work. The GUI remains step 5 and is not a gate for these headless checks.
+**Current handoff (updated 2026-11-06):** steps 1–4 are complete. Initial
+structured methods run through the same public-only actor/harness and offline
+scorer; their contracts, budgets, actual cost fields, process persistence and
+limitations are in [baselines.md](baselines.md). Next is step 5's minimal browser
+workspace. Pilot freezing, remaining required comparators and selective repair
+are later work. No frozen comparative evaluation has been performed.
 
-Remaining pre-run choices are operational: exact fixture/schema files, method
-implementation parameters, common actor details, calibrated model caps/timeouts,
-and final sample size. They must be recorded before the relevant evaluation;
-their absence does not mean a runnable benchmark already exists.
+Remaining pre-run choices include reviewed family grouping/gold labels, method
+configuration freezing, calibrated model caps/timeouts,
+and final sample size. The JSON environment schema is now v1. Record the remaining
+choices before the relevant evaluation; a runnable simulator does not establish
+a completed experimental comparison.
 
 ## Change log
 
 | Version | Date | Change | Results available at change |
 | --- | --- | --- | --- |
 | 0.1 | 2026-11-03 | Initial bounded protocol, paired conditions, comparisons, scoring, budget and decision rules | None; documentation only |
+| 0.1 implementation checkpoint | 2026-11-05 | Step 3 environment and schema v1 implemented; handoff advanced to baseline adapters; research margins unchanged | Engineering acceptance only; no comparative outcomes |
+| 0.1 implementation checkpoint | 2026-11-06 | Step 4 initial Track S baselines, actor, budgets/costs and subprocess persistence; next step 5; margins unchanged | Development engineering comparisons only |
+| Generator v1.1 label amendment | 2026-11-06 | Accept the unchanged room statement in the shared report as alternative audit support; preserve public schedules/IDs | Corrects omitted valid evidence; old v1 bundles retain old labels; regenerate for new runs |

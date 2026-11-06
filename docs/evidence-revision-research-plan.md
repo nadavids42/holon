@@ -1,7 +1,8 @@
 # Evidence revision research and interface implementation plan
 
-Status: accepted direction and sequence; step 1 protocol drafted; code implementation not started.
+Status: steps 1–4 complete; step 5 (first graphical workspace) is next.
 Recorded: 2026-11-03 (America/New_York).
+Checkpoint updated: 2026-11-06 (Etc/UTC).
 
 ## Start here: current state and next action
 
@@ -10,29 +11,59 @@ The [charter](../PROJECT_HOLON.md) remains authoritative for the broader project
 The [roadmap](roadmap.md) points here; earlier implementation plans retain their
 historical checkpoints and detailed acceptance criteria.
 
-- **Current phase:** step 1 complete (protocol draft v0.1); step 2 is next.
-- **Verified code baseline:** `a98c576cd973dd342b1f2f6eb94da08ab190f66a`,
+- **Current phase:** steps 1–4 complete: protocol, adversarial Beta validation,
+  replayable project environment, and initial structured comparison methods. Step 5 is next.
+- **Original review baseline:** `a98c576cd973dd342b1f2f6eb94da08ab190f66a`,
   matching the GitHub default-branch head and local checkout at review time.
-- **Baseline verification:** 48 tests passed with
+  Step 2 started from local commit `5d8aa9a` (the plan/protocol documentation);
+  run manifests identify the added validation code by source hashes and dirty
+  status until it is committed.
+- **Current verification:** 12/12 experiment 002 scenarios and 80/80 repository
+  tests passed on 2026-11-06, including 16 environment/scorer and 13 baseline tests, plus runner
+  failure detection under `python -O`.
+  The step 3 handoff on 2026-11-06 verified source and artifact hashes for all 144
+  catalogue views and both temporal examples, plus the saved-example replay CLI.
+  Step 4 saved four complete development comparisons (copied date, shared report,
+  correction, and world change) under `runs/step4-acceptance-20261106/`; their
+  recorded source hashes were verified. These ignored artifacts are reproducible
+  with the baseline commands; all four methods retained the audited controls.
+  The original review baseline had 48 passing tests. Run the current suite with
   `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src python3 -m unittest discover -s tests -q`.
   This establishes existing engineering behavior, not comparative effectiveness
   or live model interpretation quality.
 - **Work completed:** repository/code review, research direction selection,
   sequencing, and [experiment protocol v0.1](../experiments/003-evidence-revision/protocol.md).
   The protocol defines scenarios, metrics, baseline access, budgets, practical
-  decision thresholds, and stop conditions. No research mechanism, GUI, API,
-  chat interface, or runnable comparative benchmark has been implemented.
-- **Next concrete action:** implement `experiments/002-binary-beta/` using slice 4
-  of the Beta plan: deterministic fixtures, expected properties, a small runner,
-  and explanations tied to contributing records. Validate against temporary
-  databases and record policy/dynamics versions. Then proceed to step 3's small
-  replayable environment; do not start with graph implementation or chat.
-- **Blockers:** none identified for step 2. The protocol's operational run
-  manifest, detailed schemas/method parameters, UI framework, and powered final
-  study size remain future work. Draft status does not imply a frozen final study.
+  decision thresholds, and stop conditions. No selective repair mechanism, GUI,
+  API, chat interface, or frozen comparative evaluation is implemented.
+  [Experiment 002](../experiments/002-binary-beta/README.md) now supplies the
+  adversarial engineering runner, fixed fixtures, frozen legacy migration input,
+  traceable JSON reports, and a saved explanation. Core behavior is unchanged.
+  [Experiment 003's environment](../experiments/003-evidence-revision/README.md)
+  now has strict public/private schemas, seeded generation of 36 candidate
+  families × four conditions, prefix-only replay/checkpoints, offline action and
+  control-audit scoring, and correction/world-change acceptance cases.
+- **Step 4 implementation:** [baseline contract and commands](../experiments/003-evidence-revision/baselines.md).
+  H0 uses the unchanged Workspace service; LWW, RR, and RB are local mechanism-class
+  implementations. One deterministic actor, subprocess replay, method checkpoints,
+  separate read-only audits, bounded logical work, and offline scoring are wired.
+  Development smoke comparisons are engineering acceptance, not research findings.
+  Generator v1.1 fixes the shared report's valid room-audit alternative; public
+  schedules are unchanged, and the label amendment is documented in the protocol.
+- **Next concrete action:** step 5, UI-1 through UI-5: expose the existing
+  observation → interpretation → acceptance → inspection → correction workflow
+  through a local browser. Start with the service/API boundary and workspace
+  selection; keep the CLI and browser behavior equivalent. General chat and
+  research dashboards are later work. Do not begin selective repair in this step.
+- **Blockers:** none identified for step 5. UI framework selection remains open.
+  Before a research pilot, review candidate family grouping and gold labels,
+  freeze baseline/actor configuration, and add required later comparators.
+  Track E model configuration, budgets, summary writeback and powered final study
+  size remain future work. The current comparison command is development-only.
 
-Experiment 003 currently contains the protocol only. Experiment 002 is a planned
-deliverable, not an existing artifact.
+Experiments 002 and 003 are runnable; their READMEs contain verified commands.
+Experiment 003 runs the environment, scorer, and four initial Track S methods.
+It does not yet implement the selective repair research candidate.
 
 ## Decision and research question
 
@@ -75,7 +106,7 @@ remain separate future studies, not requirements for this one.
 | Time | Recording time and optional observation time | Minimal subject-time/validity semantics for changes versus corrections |
 | Interpretation | Ollama classifies a report against an existing proposition; explicit acceptance | Proposed claims and derivations; extraction evaluation and full attempt logging |
 | Interface | CLI over `Workspace`; preview/accept orchestration partly in CLI | Shared application operations, browsing/search, local API, GUI, grounded chat |
-| Evaluation | 48 passing engineering tests; experiment 001 acceptance scenario | Adversarial experiment 002 and comparative experiment 003 |
+| Evaluation | 80 passing engineering tests; experiment 002 adversarial checks; experiment 003 environment, initial baselines, costs and development scoring | Frozen pilot/evaluation, later comparators, model costs, statistical analysis |
 
 Relevant implementation: `src/holon/workspace/service.py`,
 `src/holon/workspace/storage.py`, `src/holon/workspace/metadata.py`,
@@ -92,9 +123,9 @@ the exit evidence specified below, not just code or a passing demonstration.
 | Step | Deliverable | Status | Completion evidence |
 | --- | --- | --- | --- |
 | 1 | Research protocol and criteria | Complete (draft v0.1) | [Protocol](../experiments/003-evidence-revision/protocol.md): world/update semantics, comparisons, scoring, paired conditions, budget and decision rules; documentation checks passed; no runs |
-| 2 | Adversarial projection validation | Not started | — |
-| 3 | Replayable project environment | Not started | — |
-| 4 | Inexpensive comparison methods | Not started | — |
+| 2 | Adversarial projection validation | Complete | [Experiment 002](../experiments/002-binary-beta/README.md): 12/12 scenarios, 51/51 tests; [saved explanation](../experiments/002-binary-beta/example.md); temporary stores only; no core changes |
+| 3 | Replayable project environment | Complete | [Experiment 003 environment](../experiments/003-evidence-revision/README.md), [schemas](../experiments/003-evidence-revision/schema.md), 16 new tests; 36 candidate families/144 views; actual process restart and private-file-free replay verified; no comparative runs |
+| 4 | Inexpensive comparison methods | Complete | [Track S baselines](../experiments/003-evidence-revision/baselines.md): H0/LWW/RR/RB, shared actor, subprocess persistence, cost/budget accounting, separate audits; 13 new tests; development acceptance only |
 | 5 | First graphical workspace (UI-1 through UI-5) | Not started | — |
 | 6 | Derivation and lineage contract/storage | Not started | — |
 | 7 | Selective repair with known dependencies | Not started | — |
@@ -126,6 +157,10 @@ baseline, or invalidate the comparison without seeing any experimental result.
 
 ### 2. Finish projection validation
 
+Completed 2026-11-05: 12 scenarios and 51 repository tests pass. See
+[experiment 002](../experiments/002-binary-beta/README.md) for reproduction and
+[the saved explanation](../experiments/002-binary-beta/example.md) for traceability.
+
 Complete slice 4 of the existing Beta plan in `experiments/002-binary-beta/`.
 Cover repeated copies, shared origins, no evidence versus balanced disagreement,
 retries, permutations, withdrawals/replacements, missing metadata, invalid inputs,
@@ -136,6 +171,13 @@ record code, policy, and dynamics versions. Use temporary databases or copies.
 reported quantity can be traced to its inputs. No calibration claim follows.
 
 ### 3. Build the replayable environment
+
+Completed 2026-11-05: generator, strict schemas, public-prefix replay/checkpoints,
+offline action/control-audit scorers and command-line tools. Six motif groups
+provide 36 candidate configurations and C0–C3 views; the 24/12 split is a candidate
+assignment requiring review before the pilot. Tests establish reproducibility,
+boundary separation, time semantics, AND/OR support, and scoring failure cases.
+The full suite passes 67 tests. No method comparisons or model runs occurred.
 
 Create a small deterministic project-world generator and event runner under
 `experiments/003-evidence-revision/`. Begin with a handful of manually inspectable
@@ -149,6 +191,13 @@ such as choosing a preparation date, rather than only memory inspection.
 process restarts; hidden truth does not leak into the agent's inputs.
 
 ### 4. Establish comparison methods
+
+Completed 2026-11-06: four initial Track S methods share one harness, actor,
+public archive and offline scorer. H0 uses the actual unchanged core. The other
+three are mechanism-class implementations. Restart persistence, cost vectors,
+budget exhaustion and read-only audits are tested; the runner refuses validation
+families. See [the baseline contract](../experiments/003-evidence-revision/baselines.md)
+for exact semantics, unsupported capabilities and remaining pre-evaluation work.
 
 Implement unchanged Holon, last-write-wins facts, source-filtered rereading, and
 full rebuilding from available evidence. Before the final study, add a retrieval
@@ -312,6 +361,9 @@ At the end of each implementation session:
 | --- | --- | --- | --- |
 | 2026-11-03 | Reviewed current repo, selected opportunity 1, documented research/UI sequence and handoff tracking | GitHub/local baseline `a98c576`; 48 existing tests passed; no implementation changes | Step 1: draft experiment 003 protocol and pre-result criteria |
 | 2026-11-03 | Completed step 1 protocol draft v0.1; specified pilot conditions, scoring, baselines, budgets, practical margins, and freeze requirements | Documentation links/consistency checked; no benchmark code, experiments, or new application test run | Step 2: implement experiment 002 adversarial Beta checks |
+| 2026-11-05 | Completed step 2: deterministic adversarial runner, fixed inputs, frozen legacy schema, JSON diagnostics and saved explanation; added runner integration tests | 12/12 scenarios; 51/51 repository tests; wrong expectation detected under Python optimization; core behavior/runtime database unchanged | Step 3: small replayable project world and deterministic scorer for experiment 003 |
+| 2026-11-05 | Completed step 3: seeded project-world generator, public/private contracts, resumable public replay, offline action and retention scoring, candidate catalogue | 16 new environment/scorer tests; 67/67 full suite; 144 paired views structurally checked; no models or comparative outcomes | Step 4: implement four baseline adapters, shared actor contract, restart persistence and cost counters on development cases |
+| 2026-11-06 | Completed step 4: H0/LWW/RR/RB, common structured actor, process-boundary persistence, costs, budgets and audit isolation; corrected shared-report room audit labels in generator v1.1 | 13 new baseline tests; 80/80 full suite; development-only smoke comparisons, no research conclusion | Step 5: minimal browser workspace, UI-1 through UI-5 |
 
 ## References and scope of review
 

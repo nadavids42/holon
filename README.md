@@ -253,14 +253,40 @@ Start with [the research and interface plan](docs/evidence-revision-research-pla
 for current progress, ordered steps, exit criteria, and the exact next action.
 [The roadmap](docs/roadmap.md) provides the short checkpoint.
 
-Step 1 is complete as
-[experiment protocol draft v0.1](experiments/003-evidence-revision/protocol.md);
-no comparative benchmark code or runs exist yet. Next, finish the deterministic
-adversarial checks in
-[the Beta implementation plan](docs/binary-beta-implementation-plan.md), then
-build the small research environment.
+Steps 1–4 are complete:
+[experiment protocol draft v0.1](experiments/003-evidence-revision/protocol.md),
+[adversarial Beta validation](experiments/002-binary-beta/README.md),
+[the replayable project world](experiments/003-evidence-revision/README.md), and
+[the four initial structured comparison methods](experiments/003-evidence-revision/baselines.md).
+All 12 adversarial scenarios and 80 repository tests pass. Development smoke
+comparisons run through one actor/harness/scorer; no frozen evaluation or research
+finding is claimed. Next is step 5: the minimal local graphical workspace.
 A minimal local browser GUI is planned early in the work, with grounded chat
 later; the research does not require a UI first.
+
+Run the adversarial checks without a model (choose a new output directory):
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python3 experiments/002-binary-beta/run.py --output runs/beta-validation
+```
+
+The runner uses temporary databases and saves JSON results plus an evidence
+explanation. See the [saved example](experiments/002-binary-beta/example.md):
+two reports with shared origin contribute raw support 1.5 but effective support 1;
+opposing mass 0.5 remains visible. A favored mean does not resolve qualitative
+conflict or establish a calibrated probability.
+
+Generate the first project-world correction scenario (choose a new directory):
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python3 experiments/003-evidence-revision/run.py generate --output runs/revision-world-smoke
+```
+
+This exports separate public schedules and private scoring records. Follow
+[the experiment README](experiments/003-evidence-revision/README.md) to advance
+replay one task at a time, resume checkpoints, and score saved answers offline.
+The complete schedule is for the trusted driver; acting methods receive only
+the currently available public view.
 
 The integrated lifecycle scenario in `tests/integration/test_lifecycle_scenario.py`
 already checks observation reuse and reinterpretation across CLI processes on a

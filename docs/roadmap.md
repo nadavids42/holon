@@ -7,18 +7,20 @@ provenance**, extending the existing workspace. The authoritative progress track
 exit criteria, UI sequence, and future-session handoff are in
 [the evidence revision research plan](evidence-revision-research-plan.md).
 
-**Current checkpoint:** step 1 complete as
-[experiment protocol draft v0.1](../experiments/003-evidence-revision/protocol.md).
-No benchmark or UI code has been implemented. The reviewed code baseline is
-`a98c576`, with 48 existing tests passing at the planning review.
+**Current checkpoint (2026-11-06):** steps 1–4 are complete: protocol,
+[adversarial Beta validation](../experiments/002-binary-beta/README.md),
+[the replayable environment](../experiments/003-evidence-revision/README.md), and
+[H0/LWW/RR/RB structured baselines](../experiments/003-evidence-revision/baselines.md).
+All 12 adversarial scenarios and 80 repository tests pass. Core behavior is
+unchanged. The common actor/harness persists method state across processes,
+meters work and runtime, isolates audits, and scores development episodes offline.
+These are engineering smoke comparisons, not a frozen research evaluation.
 
-**Next action:** implement adversarial Beta validation in planned
-`experiments/002-binary-beta/`, following slice 4 of the Beta plan: deterministic
-fixtures, expected properties, a runner, and traceable explanations. Then build
-the small comparative environment under experiment 003 (step 3). The protocol
-defines the study; it does not supply a runnable benchmark yet.
+**Next action:** step 5, UI-1 through UI-5: the local browser workspace for
+observations, interpretation, acceptance, inspection and correction. Start with
+the service/API boundary; preserve CLI behavior. Before a research pilot, review
+candidate family grouping/labels and freeze the actor/baseline configuration.
 
-A minimal local GUI follows the environment and initial baselines (step 5).
 Grounded chat follows later (step 10). Neither is a prerequisite for starting the
 research protocol. Update this checkpoint and the plan together as work progresses.
 
@@ -30,10 +32,11 @@ research protocol. Update this checkpoint and the plan together as work progress
    retained provenance, restart persistence, legacy migration, and rollback.
 4. Pure binary Beta domain projector: implemented and tested. Versioned impact
    metadata, migration, and workspace/CLI integration are also implemented.
-   Deterministic adversarial scenarios and explanation checks are next. Follow
-   `binary-beta-implementation-plan.md` for persistence and validation slices.
-5. Comparative research criteria are drafted in experiment 003; its evaluation
-   harness and runs are not implemented. Follow the active plan above.
+   Deterministic adversarial scenarios and traceable explanations are complete in
+   experiment 002. See `binary-beta-implementation-plan.md` for the slice history.
+5. Experiment 003 has criteria, a 36-family candidate generator (four paired
+   provenance conditions), replay/checkpoints, and action/control-audit scorers.
+   Baselines, complete method cost accounting and comparative runs remain next.
 
 Foundational architecture follow-up: the semantic contract is in
 `epistemic-semantic-contract.md` and the implementation plan is in
