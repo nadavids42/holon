@@ -1,0 +1,170 @@
+{
+  "proposition_id": "f12b45fa-4fc4-45fd-9625-b9ebf363eb72",
+  "state": {
+    "proposition": {
+      "id": "f12b45fa-4fc4-45fd-9625-b9ebf363eb72",
+      "claim": "Door closed",
+      "scope": "lab at T0"
+    },
+    "status": "supported",
+    "evidence": [
+      {
+        "id": "0ea1188c-6ba6-43ef-8d2f-fef2e61a4ed4",
+        "relation": "supports",
+        "observation_id": "079c4731-6017-486a-8bfe-1ee6c2dec11c",
+        "source": "A",
+        "report": "closed",
+        "recorded_at": "2026-11-07T13:49:03.476116+00:00",
+        "observed_at": "2026-11-07T10:00:00.000000+00:00",
+        "model": null,
+        "reason": null,
+        "prompt_version": null,
+        "withdrawal_actor": null,
+        "withdrawal_reason": null,
+        "withdrawn_at": null,
+        "replacement_evidence_id": null,
+        "active": true
+      },
+      {
+        "id": "4f736e5a-4f0a-4f06-ba5c-d7af73ad2d2b",
+        "relation": "contradicts",
+        "observation_id": "f584a09a-8d5b-43dc-a580-179ad1790273",
+        "source": "B",
+        "report": "open",
+        "recorded_at": "2026-11-07T13:49:03.476565+00:00",
+        "observed_at": null,
+        "model": null,
+        "reason": null,
+        "prompt_version": null,
+        "withdrawal_actor": "reviewer",
+        "withdrawal_reason": "Bad report",
+        "withdrawn_at": "2026-11-07T13:49:03.476832+00:00",
+        "replacement_evidence_id": null,
+        "active": false
+      }
+    ],
+    "history": [
+      {
+        "sequence": 1,
+        "status": "supported",
+        "evidence_ids": [
+          "0ea1188c-6ba6-43ef-8d2f-fef2e61a4ed4"
+        ],
+        "recorded_at": "2026-11-07T13:49:03.476116+00:00",
+        "policy": "active-presence-v2"
+      },
+      {
+        "sequence": 2,
+        "status": "contested",
+        "evidence_ids": [
+          "0ea1188c-6ba6-43ef-8d2f-fef2e61a4ed4",
+          "4f736e5a-4f0a-4f06-ba5c-d7af73ad2d2b"
+        ],
+        "recorded_at": "2026-11-07T13:49:03.476565+00:00",
+        "policy": "active-presence-v2"
+      },
+      {
+        "sequence": 3,
+        "status": "supported",
+        "evidence_ids": [
+          "0ea1188c-6ba6-43ef-8d2f-fef2e61a4ed4"
+        ],
+        "recorded_at": "2026-11-07T13:49:03.476832+00:00",
+        "policy": "active-presence-v2"
+      }
+    ],
+    "projection": {
+      "proposition_id": "f12b45fa-4fc4-45fd-9625-b9ebf363eb72",
+      "replay_coverage": "replay_complete",
+      "policy_id": "binary-beta-v1",
+      "policy_digest": "7564f76f066ecf9ba924e02659feea936e40cc488c276f563f36a2de856e83b0",
+      "dynamics_version": "binary-beta-v1",
+      "ledger_digest": "7aa127966ddc14de3455f8a157ff3a0df6b5e9a98796512e2e838599a41a8126",
+      "missing_metadata_ids": [],
+      "evidence_metadata": [
+        {
+          "id": "0ea1188c-6ba6-43ef-8d2f-fef2e61a4ed4",
+          "relation": "supports",
+          "source": "A",
+          "report": "closed",
+          "recorded_at": "2026-11-07T13:49:03.476116+00:00",
+          "withdrawn_at": null,
+          "actor": null,
+          "reason": null,
+          "replacement_evidence_id": null,
+          "mass": 1.0,
+          "semantics": "stipulated-impact-v1",
+          "cluster_id": "source:559aead08264d5795d3909718cdd05abd49572e84fe55590eef31a88a08fdffd",
+          "cluster_actor": null,
+          "cluster_reason": null,
+          "event_key": null,
+          "migration_id": null
+        },
+        {
+          "id": "4f736e5a-4f0a-4f06-ba5c-d7af73ad2d2b",
+          "relation": "contradicts",
+          "source": "B",
+          "report": "open",
+          "recorded_at": "2026-11-07T13:49:03.476565+00:00",
+          "withdrawn_at": "2026-11-07T13:49:03.476832+00:00",
+          "actor": "reviewer",
+          "reason": "Bad report",
+          "replacement_evidence_id": null,
+          "mass": 1.0,
+          "semantics": "stipulated-impact-v1",
+          "cluster_id": "source:df7e70e5021544f4834bbee64a9e3789febc4be81470df629cad6ddb03320a5c",
+          "cluster_actor": null,
+          "cluster_reason": null,
+          "event_key": null,
+          "migration_id": null
+        }
+      ],
+      "readout": {
+        "proposition_id": "f12b45fa-4fc4-45fd-9625-b9ebf363eb72",
+        "dynamics_version": "binary-beta-v1",
+        "policy": {
+          "version": "binary-beta-v1",
+          "alpha0": 1.0,
+          "beta0": 1.0,
+          "cluster_cap": 1.0
+        },
+        "alpha": 2.0,
+        "beta": 1.0,
+        "mean": 0.6666666666666666,
+        "variance": 0.05555555555555555,
+        "evidence_strength": 1.0,
+        "posterior_concentration": 3.0,
+        "raw_support": 1.0,
+        "raw_contradiction": 0.0,
+        "effective_support": 1.0,
+        "effective_contradiction": 0.0,
+        "conflict_balance": 0.0,
+        "opposing_mass": 0.0,
+        "active_count": 1,
+        "withdrawn_count": 1,
+        "excluded_count": 0,
+        "evidence_ids": [
+          "0ea1188c-6ba6-43ef-8d2f-fef2e61a4ed4"
+        ],
+        "withdrawn_ids": [
+          "4f736e5a-4f0a-4f06-ba5c-d7af73ad2d2b"
+        ],
+        "exclusions": [],
+        "clusters": [
+          {
+            "cluster_id": "source:559aead08264d5795d3909718cdd05abd49572e84fe55590eef31a88a08fdffd",
+            "evidence_ids": [
+              "0ea1188c-6ba6-43ef-8d2f-fef2e61a4ed4"
+            ],
+            "raw_support": 1.0,
+            "raw_contradiction": 0.0,
+            "effective_support": 1.0,
+            "effective_contradiction": 0.0,
+            "support_multiplier": 1.0,
+            "contradiction_multiplier": 0.0
+          }
+        ]
+      }
+    }
+  }
+}

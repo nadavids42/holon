@@ -129,3 +129,19 @@ future work; the exact frontier and retention mechanism are not yet decided.
   a historical quantitative readout retain to be reproducible?
 - Which logical immutability rules belong in the service versus database
   constraints, and how should legacy records with missing context be labeled?
+
+## Derivation contract (step 6 slice 1)
+
+The implemented pure domain contract is [derivation-v1](derivation-lineage-contract.md).
+A justification records an explicitly supplied rule from a nonempty AND-set of
+signed proposition references to one signed conclusion. Separate justifications
+are OR alternatives. Immutable snapshots validate references and reject cycles
+across all alternatives, conservatively ignoring sign. A structural helper checks
+premise membership only; it does not infer truth, resolve conflict, propagate
+eligibility, or change quantitative impact.
+
+Logical dependence is separate from observation copy lineage and evidence sign.
+Slice 2 now persists derivations and append-only observation-origin changes in
+schema 3, preserving existing records and projection policies. Shared service and
+GUI integration remain future slices. The linked contract specifies immutable
+history, merge membership, reversal order, retry and concurrency boundaries.

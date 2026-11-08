@@ -3,14 +3,62 @@ import argparse
 import json
 import sqlite3
 
-from holon.workspace.service import Workspace, required, normalize_observed_at
+from holon.workspace.service import Workspace
+from holon.workspace.operations import preview_interpretation, accept_interpretation
 from holon.inference.ollama import OllamaInterpreter
+
+
+def review(preview, *, replacement=False):
+    print(json.dumps(preview.display(), indent=2))
+    if preview.interpretation.relation in ('unrelated', 'uncertain'):
+        print('No update: report is unrelated or uncertain.')
+        return False
+    try:
+        answer = input('Accept this replacement evidence link? [y/N] ' if replacement
+                       else 'Accept this evidence link? [y/N] ')
+    except (EOFError, KeyboardInterrupt):
+        answer = ''
+    if answer.strip().lower() not in ('y', 'yes'):
+        print('Not accepted. Workspace unchanged.')
+        return False
+    return True
 
 
 def main():
     parser = argparse.ArgumentParser(description="Inspect a persistent epistemic workspace")
     parser.add_argument("--db", default="runtime/holon.sqlite3")
     commands = parser.add_subparsers(dest="command", required=True)
+    commands.add_parser('inspect-derivations', help='Read derivations and their proposition references')
+    commands.add_parser('inspect-lineage', help='Read origin assignments, events and revision')
+    derive = commands.add_parser('derive', help='Record a supplied justification without changing belief status')
+    derive.add_argument('proposition_id')
+    derive.add_argument('--id', dest='justification_id', required=True)
+    derive.add_argument('--relation', choices=['supports', 'contradicts'], default='supports')
+    derive.add_argument('--premise', nargs=2, metavar=('PROPOSITION_ID', 'RELATION'), action='append', required=True)
+    derive.add_argument('--rule', required=True)
+    derive.add_argument('--actor', required=True)
+    derive.add_argument('--reason', required=True)
+    for name in ('assign-origin', 'merge-origins', 'reverse-lineage'):
+        command = commands.add_parser(name, help='Append an attributed origin-lineage event')
+        command.add_argument('--event-id', required=True)
+        command.add_argument('--actor', required=True)
+        command.add_argument('--reason', required=True)
+        command.add_argument('--expected-revision', type=int, required=True)
+        if name == 'assign-origin':
+            command.add_argument('observation_id')
+            group = command.add_mutually_exclusive_group(required=True)
+            group.add_argument('--group', dest='group_id')
+            group.add_argument('--unknown', action='store_true')
+        elif name == 'merge-origins':
+            command.add_argument('--group', dest='group_ids', action='append', required=True)
+            command.add_argument('--target', dest='target_group_id', required=True)
+        else:
+            command.add_argument('target_event_id')
+    serve = commands.add_parser('serve', help='Open a local browser workspace')
+    serve.add_argument('--port', type=int, default=8765)
+    serve.add_argument('--model', default='qwen3:14b')
+    serve.add_argument('--host', default='http://127.0.0.1:11434', help='Ollama URL')
+    serve.add_argument('--timeout', type=float, default=120)
     create = commands.add_parser("propose", help="Create a claim with explicit shared scope")
     create.add_argument("claim")
     create.add_argument("--scope", required=True)
@@ -89,10 +137,35 @@ def main():
     interpret_existing.add_argument('--host', default='http://127.0.0.1:11434')
     interpret_existing.add_argument('--timeout', type=float, default=120)
     args = parser.parse_args()
+    if args.command == 'serve':
+        from holon.web.server import serve
+        try:
+            serve(args.db, port=args.port, model=args.model, host=args.host, timeout=args.timeout)
+        except (ValueError, sqlite3.Error, OSError) as error:
+            parser.exit(2, f"error: {error}\n")
+        return
     workspace = None
     try:
         workspace = Workspace(args.db)
-        if args.command == "propose":
+        if args.command == 'inspect-derivations':
+            result = workspace.inspect_derivations()
+        elif args.command == 'inspect-lineage':
+            result = workspace.inspect_lineage()
+        elif args.command == 'derive':
+            result = workspace.add_derivation(args.justification_id,
+                {'proposition_id': args.proposition_id, 'relation': args.relation},
+                [{'proposition_id': pid, 'relation': relation} for pid, relation in args.premise],
+                args.rule, args.actor, args.reason)
+        elif args.command in ('assign-origin', 'merge-origins', 'reverse-lineage'):
+            common = dict(event_id=args.event_id, actor=args.actor, reason=args.reason,
+                          expected_revision=args.expected_revision)
+            if args.command == 'assign-origin':
+                result = workspace.assign_origin(observation_id=args.observation_id, group_id=args.group_id, **common)
+            elif args.command == 'merge-origins':
+                result = workspace.merge_origins(group_ids=args.group_ids, target_group_id=args.target_group_id, **common)
+            else:
+                result = workspace.reverse_lineage(target_event_id=args.target_event_id, **common)
+        elif args.command == "propose":
             result = {"proposition_id": workspace.create_proposition(args.claim, args.scope)}
         elif args.command == 'observe':
             result = {'observation_id': workspace.record_observation(args.source, args.text, observed_at=args.observed_at)}
@@ -103,34 +176,17 @@ def main():
                 mass=args.mass, event_key=args.event_key, cluster_id=args.cluster_id,
                 cluster_actor=args.cluster_actor, cluster_reason=args.cluster_reason)
         elif args.command == 'reinterpret':
-            required(args.actor, 'actor')
-            required(args.reason, 'reason')
-            proposal = None
-            relation = args.relation
             if args.model is not None:
-                context = workspace.evidence_context(args.evidence_id)
-                if context['withdrawn_at'] is not None and args.event_key is None:
-                    raise ValueError(f"Evidence already withdrawn: {args.evidence_id}")
-                proposition = {'id': context['proposition_id'], 'claim': context['claim'], 'scope': context['scope']}
-                proposal = OllamaInterpreter(args.model, args.host, args.timeout).interpret(proposition, context['report'])
-                print(json.dumps({'evidence_id': args.evidence_id, 'observation_id': context['observation_id'],
-                    'proposition': proposition, 'source': context['source'], 'report': context['report'],
-                    'observed_at': context['observed_at'], 'previous_relation': context['relation'],
-                    'relation': proposal.relation, 'reason': proposal.reason, 'model': proposal.model,
-                    'prompt_version': proposal.prompt_version}, indent=2))
-                if proposal.relation in ('unrelated', 'uncertain'):
-                    print('No update: report is unrelated or uncertain.')
+                preview = preview_interpretation(workspace,
+                    OllamaInterpreter(args.model, args.host, args.timeout), 'reinterpret',
+                    evidence_id=args.evidence_id, actor=args.actor, reason=args.reason,
+                    mass=args.mass, event_key=args.event_key)
+                if not review(preview, replacement=True):
                     return
-                try:
-                    answer = input('Accept this replacement evidence link? [y/N] ')
-                except (EOFError, KeyboardInterrupt):
-                    answer = ''
-                if answer.strip().lower() not in ('y', 'yes'):
-                    print('Not accepted. Workspace unchanged.')
-                    return
-                relation = proposal.relation
-            result = workspace.reinterpret_evidence(args.evidence_id, relation, args.actor, args.reason,
-                                                     mass=args.mass, event_key=args.event_key, interpretation=proposal)
+                result = accept_interpretation(workspace, preview)
+            else:
+                result = workspace.reinterpret_evidence(args.evidence_id, args.relation, args.actor,
+                    args.reason, mass=args.mass, event_key=args.event_key)
         elif args.command == "report":
             result = workspace.add_report(args.proposition_id, args.source, args.text, args.relation,
                                           mass=args.mass, event_key=args.event_key, cluster_id=args.cluster_id,
@@ -146,37 +202,14 @@ def main():
             result = workspace.migrate_impacts(args.proposition_id, args.actor, args.reason)
         elif args.command in ("interpret", "interpret-observation"):
             existing = args.command == 'interpret-observation'
-            if existing:
-                observation = workspace.inspect_observation(args.observation_id)['observation']
-                source, report, observed_at = observation['source'], observation['report'], observation['observed_at']
-            else:
-                required(args.source, "source")
-                required(args.text, "report")
-                source, report = args.source, args.text
-                observed_at = normalize_observed_at(args.observed_at)
-            proposition = workspace.inspect(args.proposition_id)["proposition"]
-            proposal = OllamaInterpreter(args.model, args.host, args.timeout).interpret(
-                proposition, report)
-            print(json.dumps({"proposition": proposition, "source": source,
-                              "report": report, "relation": proposal.relation,
-                              "reason": proposal.reason, "model": proposal.model,
-                              "prompt_version": proposal.prompt_version, "observed_at": observed_at}, indent=2))
-            if proposal.relation in ("unrelated", "uncertain"):
-                print("No update: report is unrelated or uncertain.")
+            arguments = ({'observation_id': args.observation_id} if existing else
+                         {'source': args.source, 'report': args.text, 'observed_at': args.observed_at})
+            preview = preview_interpretation(workspace,
+                OllamaInterpreter(args.model, args.host, args.timeout),
+                'observation' if existing else 'report', proposition_id=args.proposition_id, **arguments)
+            if not review(preview):
                 return
-            try:
-                answer = input("Accept this evidence link? [y/N] ")
-            except (EOFError, KeyboardInterrupt):
-                answer = ""
-            if answer.strip().lower() not in ("y", "yes"):
-                print("Not accepted. Workspace unchanged.")
-                return
-            if existing:
-                result = workspace.link_observation(args.observation_id, args.proposition_id,
-                                                    proposal.relation, interpretation=proposal)
-            else:
-                result = workspace.add_report(args.proposition_id, source, report,
-                                              proposal.relation, interpretation=proposal, observed_at=observed_at)
+            result = accept_interpretation(workspace, preview)
         else:
             result = workspace.inspect(args.proposition_id, projection_policy=args.policy if args.projection else None)
         print(json.dumps(result, indent=2))

@@ -1,8 +1,8 @@
 # Evidence revision research and interface implementation plan
 
-Status: steps 1–4 complete; step 5 (first graphical workspace) is next.
+Status: steps 1–4 complete; step 5 browser checks ongoing; step 6 slices 1–4 implemented; slice 4 live acceptance pending.
 Recorded: 2026-11-03 (America/New_York).
-Checkpoint updated: 2026-11-06 (Etc/UTC).
+Checkpoint updated: 2026-11-08 (America/New_York).
 
 ## Start here: current state and next action
 
@@ -12,14 +12,22 @@ The [roadmap](roadmap.md) points here; earlier implementation plans retain their
 historical checkpoints and detailed acceptance criteria.
 
 - **Current phase:** steps 1–4 complete: protocol, adversarial Beta validation,
-  replayable project environment, and initial structured comparison methods. Step 5 is next.
+  replayable project environment, and initial structured comparison methods. Step 5
+  is in progress: implementation and automated checks complete; live browser
+  acceptance remains partially verified. At the user’s request, step 6 slices 1–4
+  (domain contract, persistence, shared service/CLI/API and GUI integration) are
+  implemented. Live acceptance of the slice 4 controls remains pending.
 - **Original review baseline:** `a98c576cd973dd342b1f2f6eb94da08ab190f66a`,
   matching the GitHub default-branch head and local checkout at review time.
   Step 2 started from local commit `5d8aa9a` (the plan/protocol documentation);
   run manifests identify the added validation code by source hashes and dirty
   status until it is committed.
-- **Current verification:** 12/12 experiment 002 scenarios and 80/80 repository
-  tests passed on 2026-11-06, including 16 environment/scorer and 13 baseline tests, plus runner
+- **Current verification:** 12/12 experiment 002 scenarios and 134/134 repository
+  tests passed on 2026-11-08, including five Node-backed GUI adapter tests,
+  11 shared service/interface tests, 14 persistence/migration tests,
+  11 derivation-domain tests,
+  13 browser/application tests,
+  16 environment/scorer and 13 baseline tests, plus runner
   failure detection under `python -O`.
   The step 3 handoff on 2026-11-06 verified source and artifact hashes for all 144
   catalogue views and both temporal examples, plus the saved-example replay CLI.
@@ -27,6 +35,11 @@ historical checkpoints and detailed acceptance criteria.
   correction, and world change) under `runs/step4-acceptance-20261106/`; their
   recorded source hashes were verified. These ignored artifacts are reproducible
   with the baseline commands; all four methods retained the audited controls.
+  Step 5 also passed JavaScript syntax and wheel static-asset packaging checks.
+  The implementation sandbox denied socket creation. On 2026-11-07 the user
+  confirmed live GUI claim/observation creation, model preview and acceptance, and
+  conflicting evidence producing contested status. Correction and the broader
+  browser checklist are not yet explicitly confirmed. See [browser acceptance](browser-workspace.md).
   The original review baseline had 48 passing tests. Run the current suite with
   `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src python3 -m unittest discover -s tests -q`.
   This establishes existing engineering behavior, not comparative effectiveness
@@ -34,8 +47,9 @@ historical checkpoints and detailed acceptance criteria.
 - **Work completed:** repository/code review, research direction selection,
   sequencing, and [experiment protocol v0.1](../experiments/003-evidence-revision/protocol.md).
   The protocol defines scenarios, metrics, baseline access, budgets, practical
-  decision thresholds, and stop conditions. No selective repair mechanism, GUI,
-  API, chat interface, or frozen comparative evaluation is implemented.
+  decision thresholds, and stop conditions. The local API/browser workspace is
+  implemented; no selective repair mechanism, chat interface, or frozen comparative
+  evaluation is implemented.
   [Experiment 002](../experiments/002-binary-beta/README.md) now supplies the
   adversarial engineering runner, fixed fixtures, frozen legacy migration input,
   traceable JSON reports, and a saved explanation. Core behavior is unchanged.
@@ -50,16 +64,38 @@ historical checkpoints and detailed acceptance criteria.
   Development smoke comparisons are engineering acceptance, not research findings.
   Generator v1.1 fixes the shared report's valid room-audit alternative; public
   schedules are unchanged, and the label amendment is documented in the protocol.
-- **Next concrete action:** step 5, UI-1 through UI-5: expose the existing
-  observation → interpretation → acceptance → inspection → correction workflow
-  through a local browser. Start with the service/API boundary and workspace
-  selection; keep the CLI and browser behavior equivalent. General chat and
-  research dashboards are later work. Do not begin selective repair in this step.
-- **Blockers:** none identified for step 5. UI framework selection remains open.
-  Before a research pilot, review candidate family grouping and gold labels,
-  freeze baseline/actor configuration, and add required later comparators.
-  Track E model configuration, budgets, summary writeback and powered final study
-  size remain future work. The current comparison command is development-only.
+- **Step 5 implementation:** [browser workspace](browser-workspace.md). Shared
+  interpretation operations, listing/search/filtering, loopback API, evidence and
+  history views, report/link/correction forms, explicit model acceptance,
+  transaction-scoped revalidation and durable command receipts are implemented.
+  CLI and API parity, rollback, retries, concurrency and error boundaries are
+  tested. No user's working database was opened during implementation; checks
+  used temporary stores.
+- **Step 6 slice 1:** [derivation contract](derivation-lineage-contract.md),
+  immutable signed references/justifications, AND/OR structural checks, known-ID
+  validation and deterministic acyclic graph snapshots. No persistence or belief
+  updates were added in slice 1.
+- **Step 6 slice 2:** schema-3 additive migration and `DerivationStore` persistence
+  implement immutable justifications, observation-origin assignment/merge/reversal,
+  ordered replay, retries and concurrency protection. Frozen schema-2 readouts and
+  old records are preserved. GUI integration follows in slice 4 below.
+- **Step 6 slice 3:** shared Workspace operations, atomic composition, decoded
+  whole-workspace inspection, CLI commands and local API integration are complete.
+  Browser receipts share the same transaction as derivation/lineage changes.
+  Existing belief/projection behavior and schema version 3 are unchanged.
+- **Step 6 slice 4:** GUI premise selection, signed justification inspection,
+  and origin assignment/merge/reversal reviews are implemented. Conflict handling
+  requires a fresh review; existing receipts protect retries.
+- **Next concrete action:** complete the slice 4 browser walkthrough, then define
+  step 7 eligibility propagation and repair. Do not silently convert supplied
+  justifications into supported beliefs. Remaining step 5 acceptance stays open.
+- **Blockers:** the browser tool cannot reach the local test server
+  (`ERR_CONNECTION_REFUSED`); live browser acceptance remains pending. No implementation blocker is known. The UI uses Python's
+  standard-library HTTP server and plain HTML/CSS/JavaScript, keeping runtime
+  dependencies empty. Before a research pilot, review candidate family grouping
+  and gold labels, freeze baseline/actor configuration, and add later comparators.
+  Track E configuration, budgets, summary writeback and final study size remain
+  future work. The comparison command is development-only.
 
 Experiments 002 and 003 are runnable; their READMEs contain verified commands.
 Experiment 003 runs the environment, scorer, and four initial Track S methods.
@@ -105,8 +141,8 @@ remain separate future studies, not requirements for this one.
 | Quantitative readout | Pure binary Beta projector, persistent metadata, policy/input digests | Repair-aware eligibility and controlled comparisons; no assumed calibration |
 | Time | Recording time and optional observation time | Minimal subject-time/validity semantics for changes versus corrections |
 | Interpretation | Ollama classifies a report against an existing proposition; explicit acceptance | Proposed claims and derivations; extraction evaluation and full attempt logging |
-| Interface | CLI over `Workspace`; preview/accept orchestration partly in CLI | Shared application operations, browsing/search, local API, GUI, grounded chat |
-| Evaluation | 80 passing engineering tests; experiment 002 adversarial checks; experiment 003 environment, initial baselines, costs and development scoring | Frozen pilot/evaluation, later comparators, model costs, statistical analysis |
+| Interface | Shared CLI/browser interpretation operations; local API and graphical evidence workspace | Live browser acceptance; later dependency views and grounded chat |
+| Evaluation | 93 passing engineering tests; experiment 002 adversarial checks; experiment 003 environment, initial baselines, costs and development scoring | Frozen pilot/evaluation, later comparators, model costs, statistical analysis |
 
 Relevant implementation: `src/holon/workspace/service.py`,
 `src/holon/workspace/storage.py`, `src/holon/workspace/metadata.py`,
@@ -126,8 +162,8 @@ the exit evidence specified below, not just code or a passing demonstration.
 | 2 | Adversarial projection validation | Complete | [Experiment 002](../experiments/002-binary-beta/README.md): 12/12 scenarios, 51/51 tests; [saved explanation](../experiments/002-binary-beta/example.md); temporary stores only; no core changes |
 | 3 | Replayable project environment | Complete | [Experiment 003 environment](../experiments/003-evidence-revision/README.md), [schemas](../experiments/003-evidence-revision/schema.md), 16 new tests; 36 candidate families/144 views; actual process restart and private-file-free replay verified; no comparative runs |
 | 4 | Inexpensive comparison methods | Complete | [Track S baselines](../experiments/003-evidence-revision/baselines.md): H0/LWW/RR/RB, shared actor, subprocess persistence, cost/budget accounting, separate audits; 13 new tests; development acceptance only |
-| 5 | First graphical workspace (UI-1 through UI-5) | Not started | — |
-| 6 | Derivation and lineage contract/storage | Not started | — |
+| 5 | First graphical workspace (UI-1 through UI-5) | In progress | Implementation and 13 new automated tests complete; [live browser acceptance](browser-workspace.md) pending (sandbox denies sockets) |
+| 6 | Derivation and lineage contract/storage | In progress | [Slices 1–3](derivation-lineage-contract.md) complete: domain, persistence and shared service/CLI/API; 36 new tests; GUI integration pending |
 | 7 | Selective repair with known dependencies | Not started | — |
 | 8 | Incomplete/incorrect dependency handling | Not started | — |
 | 9 | Temporal changes and delayed corrections | Not started | — |
@@ -211,6 +247,10 @@ limitations, budgets, and differing input representations are explicit.
 
 ### 5. Add the first graphical workspace
 
+Implemented 2026-11-06; automated verification passes. Live browser acceptance
+is pending due to the execution sandbox socket restriction. See
+[implementation, startup, and the remaining walkthrough](browser-workspace.md).
+
 Complete UI-1 through UI-5 below using the existing service and semantics.
 The first milestone is the current observation → interpretation → acceptance →
 inspection → correction workflow, entirely through a local browser.
@@ -219,6 +259,13 @@ inspection → correction workflow, entirely through a local browser.
 produce equivalent workspace state and history. This is not yet general chat.
 
 ### 6. Represent derivations and lineage
+
+Slice 1 completed 2026-11-07: [contract, records and graph validation](derivation-lineage-contract.md).
+Slice 2 completed 2026-11-07: additive schema-3 persistence and lineage event replay.
+Slice 3 completed 2026-11-07: shared service/CLI/API integration and atomic inspection.
+Slice 4 implemented 2026-11-08: GUI controls; live acceptance remains pending.
+Existing belief/projection policies
+are unchanged; schema-2 data is preserved.
 
 Define premise sets with AND semantics within a justification and OR semantics
 across alternative sufficient justifications. Keep logical dependence separate
@@ -309,18 +356,20 @@ methods win, and where evidence is insufficient. A positive outcome is not requi
 
 ## Interface workstream
 
-Proposed design: a local browser interface over shared Python application
-operations. A thin FastAPI layer is a candidate, not a finalized dependency
-decision. Keep UI dependencies optional and preserve the independent CLI.
-No hosted deployment, remote access, or desktop packaging is needed initially.
+Implemented design: a local browser interface over shared Python application
+operations, using a loopback-only standard-library HTTP adapter and plain
+HTML/CSS/JavaScript. This bounded interface does not require a framework or new
+runtime dependencies; the independent CLI remains available. FastAPI was a
+candidate, not a requirement. No hosted deployment, remote access, or desktop
+packaging is included. See [the interface contract](browser-workspace.md).
 
 | ID | Work | Status | Exit evidence |
 | --- | --- | --- | --- |
-| UI-1 | Extract model preview/acceptance orchestration from the CLI into shared operations | Not started | Both interfaces use identical validation and update semantics |
-| UI-2 | Add proposition/observation listing, search, and filtering | Not started | Users select records without UUID knowledge |
-| UI-3 | Add local API/browser shell with operation-scoped database connections and transactions | Not started | Read/write boundaries and errors are tested; no shared unsafe SQLite connection |
-| UI-4 | Add claim, observation, evidence, history, and projection views | Not started | Current support, conflict, withdrawals, and provenance are inspectable |
-| UI-5 | Add report forms, interpretation previews, and correction controls | Not started | Explicit acceptance, safe repeated submissions, and stale-preview revalidation |
+| UI-1 | Extract model preview/acceptance orchestration from the CLI into shared operations | Complete | `workspace/operations.py`; CLI/API parity and atomic stale-preview tests |
+| UI-2 | Add proposition/observation listing, search, and filtering | Complete | Service/API search, literal filtering and pagination tested; searchable browser selectors implemented |
+| UI-3 | Add local API/browser shell with operation-scoped database connections and transactions | In progress | Implemented; handler/error/transaction/concurrency tests pass; live socket/browser check pending |
+| UI-4 | Add claim, observation, evidence, history, and projection views | In progress | Implemented with provenance and experimental projection labels; visual/browser verification pending |
+| UI-5 | Add report forms, interpretation previews, and correction controls | In progress | Full application workflow, persistent retries, stale review and rollback tested; browser walkthrough pending |
 | UI-6 | Add dependency, alternative-support, and repair views during steps 6–9 | Not started | Before/after state and reasons for repair are visible |
 | UI-7 | Add grounded conversational questions during step 10 | Not started | Answers reference actual records and expose unknowns/conflicts |
 | UI-8 | Add conversational change proposals and interface parity checks | Not started | Natural-language requests produce reviewable operations; chat/GUI/CLI agree |
@@ -364,6 +413,11 @@ At the end of each implementation session:
 | 2026-11-05 | Completed step 2: deterministic adversarial runner, fixed inputs, frozen legacy schema, JSON diagnostics and saved explanation; added runner integration tests | 12/12 scenarios; 51/51 repository tests; wrong expectation detected under Python optimization; core behavior/runtime database unchanged | Step 3: small replayable project world and deterministic scorer for experiment 003 |
 | 2026-11-05 | Completed step 3: seeded project-world generator, public/private contracts, resumable public replay, offline action and retention scoring, candidate catalogue | 16 new environment/scorer tests; 67/67 full suite; 144 paired views structurally checked; no models or comparative outcomes | Step 4: implement four baseline adapters, shared actor contract, restart persistence and cost counters on development cases |
 | 2026-11-06 | Completed step 4: H0/LWW/RR/RB, common structured actor, process-boundary persistence, costs, budgets and audit isolation; corrected shared-report room audit labels in generator v1.1 | 13 new baseline tests; 80/80 full suite; development-only smoke comparisons, no research conclusion | Step 5: minimal browser workspace, UI-1 through UI-5 |
+| 2026-11-06 | Implemented step 5 local browser workspace, shared interpretation operations, browse/search, durable command receipts, and correction controls; fixed stale roadmap baseline bullet | 93/93 Python tests; JavaScript syntax and packaged assets checked; live browser check blocked by sandbox socket restriction | Complete browser acceptance walkthrough, then step 6 |
+| 2026-11-07 | Completed step 6 slice 1: immutable derivation model, explicit signed premises, AND/OR structural checks, deterministic graph and cycle rejection. User requested proceeding while remaining step 5 browser checks stay open | 11 new domain tests; 104/104 suite; user confirmed live GUI creation/model acceptance/conflict exercises | Step 6 slice 2: additive storage and lineage event replay contract |
+| 2026-11-07 | Completed step 6 slice 2: schema-3 derivation persistence, attributed observation-origin events, ordered merge/reversal replay and exact retry semantics | 14 new persistence tests; 118/118 suite; frozen schema-2 migration/readout preservation; concurrency and rollback checked | Step 6 slice 3: shared application/service operations and inspection |
+| 2026-11-07 | Completed step 6 slice 3: shared service operations, atomic composition, decoded inspection, CLI and local API commands with persistent receipts | 11 new service/interface tests; 129/129 suite; consistent interleaved read snapshot, receipt rollback and migration parity checked | Step 6 slice 4: GUI derivation and origin-lineage workflows |
+| 2026-11-08 | Implemented step 6 slice 4: signed premise selection, derivation inspection, origin assignment and merge/reversal review with stale-revision recovery | 134/134 tests, including five Node-backed adapter tests; JavaScript syntax and HTTP assets verified; live browser access blocked | Slice 4 browser acceptance, then step 7 eligibility/repair policy |
 
 ## References and scope of review
 

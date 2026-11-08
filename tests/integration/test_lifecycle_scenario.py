@@ -75,7 +75,7 @@ class LifecycleScenarioTests(unittest.TestCase):
             self.assertEqual(other_state['evidence'][0]['observation_id'], observed)
             self.assertEqual(invoke('inspect', 'legacy-p', '--projection'), legacy)
             with sqlite3.connect(copy) as db:
-                self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0], 2)
+                self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0], 3)
                 self.assertEqual(db.execute('PRAGMA foreign_key_check').fetchall(), [])
             with sqlite3.connect(original) as db:
                 self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0], 1)

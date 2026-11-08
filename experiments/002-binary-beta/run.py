@@ -367,7 +367,7 @@ class AdversarialChecks(unittest.TestCase):
         dump = self.dump(w)
         self.assertEqual(w.migrate_impacts('legacy-p', 'fixture', 'Retry')['annotated_count'], 0)
         self.assertEqual(self.dump(w), dump)
-        self.assertEqual(w.db.execute('PRAGMA user_version').fetchone()[0], 2)
+        self.assertEqual(w.db.execute('PRAGMA user_version').fetchone()[0], 3)
         self.assertEqual(w.db.execute('PRAGMA foreign_key_check').fetchall(), [])
         self.assertEqual(original.read_bytes(), original_bytes)
 

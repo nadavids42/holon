@@ -28,11 +28,27 @@ These are research directions and hypotheses, not demonstrated capabilities. Hol
 
 ## Current status
 
-**Minimal persistent workspace prototype.** The repository includes a standard-library Python CLI backed by SQLite. It accepts explicitly structured reports and preserves evidence and qualitative belief revisions. An optional Ollama adapter proposes report interpretations for explicit human acceptance.
+**Minimal persistent workspace prototype.** The repository includes a standard-library Python CLI and local browser workspace backed by SQLite. It accepts explicitly structured reports and preserves evidence and qualitative belief revisions. An optional Ollama adapter proposes report interpretations for explicit human acceptance.
 
 Initial development will use the existing Ubuntu workstation and RTX 5060 Ti 16 GB GPU. Additional hardware is conditional on measured experimental needs.
 
 The core loop uses deterministic policies without model calls. Optional model interpretation feeds accepted proposals into the same loop. Multiple specialists remain deferred.
+
+## Open the browser workspace
+
+```bash
+PYTHONPATH=src python3 -m holon.cli --db runtime/ui-check.sqlite3 serve
+```
+
+Open [http://127.0.0.1:8765](http://127.0.0.1:8765). This selects a separate
+workspace for trying the GUI. Supply an existing database path with `--db` to
+work with your existing records. No additional dependencies are required.
+
+Browse/search claims and observations, review model proposals before acceptance,
+inspect evidence/history/projections, and correct or reinterpret evidence without
+copying UUIDs. Ollama is needed only for model previews. The server binds only to
+loopback. See [the browser guide](docs/browser-workspace.md) for settings, retry
+semantics, and the remaining live acceptance walkthrough.
 
 ## Run the prototype
 
@@ -258,11 +274,15 @@ Steps 1–4 are complete:
 [adversarial Beta validation](experiments/002-binary-beta/README.md),
 [the replayable project world](experiments/003-evidence-revision/README.md), and
 [the four initial structured comparison methods](experiments/003-evidence-revision/baselines.md).
-All 12 adversarial scenarios and 80 repository tests pass. Development smoke
+All 12 adversarial scenarios and 134 repository tests pass. Development smoke
 comparisons run through one actor/harness/scorer; no frozen evaluation or research
-finding is claimed. Next is step 5: the minimal local graphical workspace.
-A minimal local browser GUI is planned early in the work, with grounded chat
-later; the research does not require a UI first.
+finding is claimed. The local GUI is implemented; the user has confirmed the core
+live creation, model acceptance and conflict exercises. Remaining checks are in
+the [browser guide](docs/browser-workspace.md). Step 6 slices 1–4 are implemented:
+[derivations, lineage history and shared service/CLI/API operations](docs/derivation-lineage-contract.md).
+The GUI now supports signed premise selection, justification inspection, and
+origin assignment/merge/reversal. Live acceptance of these new controls remains
+pending. Derived belief repair and grounded chat remain later steps.
 
 Run the adversarial checks without a model (choose a new output directory):
 

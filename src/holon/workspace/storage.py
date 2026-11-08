@@ -45,7 +45,7 @@ def connect(path: str | Path) -> sqlite3.Connection:
         with db:
             db.execute("BEGIN IMMEDIATE")
             version = db.execute("PRAGMA user_version").fetchone()[0]
-            if version > 2:
+            if version > 3:
                 raise ValueError("Database schema is newer than this implementation")
             for statement in SCHEMA.split(";"):
                 if statement.strip():
@@ -72,6 +72,10 @@ def connect(path: str | Path) -> sqlite3.Connection:
             if version < 2:
                 db.execute("ALTER TABLE observations ADD COLUMN observed_at TEXT")
                 db.execute("PRAGMA user_version = 2")
+            if version < 3:
+                from holon.workspace.derivation_storage import migrate
+                migrate(db)
+                db.execute("PRAGMA user_version = 3")
         return db
     except Exception:
         db.close()

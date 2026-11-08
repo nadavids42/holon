@@ -1,5 +1,6 @@
 """Validated contributions and atomic, provenance-preserving belief updates."""
 import json
+from contextlib import contextmanager
 import re
 from dataclasses import asdict
 from holon.domain.projection import ProjectionEvidence, ProjectionPolicy, project_binary, DYNAMICS_VERSION
@@ -56,10 +57,127 @@ class Workspace:
     def close(self):
         self.db.close()
 
+    @contextmanager
+    def transaction(self):
+        """Join an application transaction, or own the operation's commit/rollback.
+
+        Nested operations must propagate failures to the outer owner. No model
+        call or human review belongs inside a write transaction.
+        """
+        if self.db.in_transaction:
+            yield
+        else:
+            with self.db:
+                yield
+
+    def _begin(self, *, immediate=False):
+        if not self.db.in_transaction:
+            self.db.execute('BEGIN IMMEDIATE' if immediate else 'BEGIN')
+
+    @contextmanager
+    def atomic(self, *, write=True):
+        """Compose operations in one transaction. Let failures escape to roll back.
+
+        Write compositions acquire the lock before any reads/validation. Use
+        write=False only for a read-only snapshot, never upgrade it to a write.
+        """
+        with self.transaction():
+            self._begin(immediate=write)
+            yield self
+
+    def _derivation_store(self):
+        from holon.workspace.derivation_storage import DerivationStore
+        return DerivationStore.for_workspace(self)
+
+    @staticmethod
+    def _signed_claim(value):
+        from holon.domain.derivation import SignedClaim
+        if not isinstance(value, dict) or set(value) != {'proposition_id', 'relation'}:
+            raise ValueError('A signed claim requires exactly proposition_id and relation')
+        return SignedClaim(**value)
+
+    def add_derivation(self, justification_id, conclusion, premises, rule, actor, reason):
+        from holon.domain.derivation import Justification
+        if not isinstance(premises, (list, tuple)):
+            raise ValueError('premises must be a list of signed claims')
+        justification = Justification(justification_id, self._signed_claim(conclusion),
+            tuple(self._signed_claim(p) for p in premises), rule, actor, reason)
+        return {'justification_id': self._derivation_store().add_justification(justification)}
+
+    def inspect_derivations(self):
+        """Decoded ledger and proposition labels from one consistent snapshot."""
+        with self.atomic(write=False):
+            ledger = self._derivation_store().inspect_derivations()
+            records = []
+            for row in ledger['records']:
+                record = dict(row)
+                record['premises'] = json.loads(record.pop('premises_json'))
+                record['conclusion'] = {'proposition_id': record.pop('conclusion_id'),
+                                        'relation': record.pop('conclusion_relation')}
+                records.append(record)
+            return {'justifications': records, 'propositions': [dict(row) for row in
+                    self.db.execute('SELECT * FROM propositions ORDER BY id')],
+                    'topological_order': list(ledger['topological_order']),
+                    'contract_version': ledger['contract_version'], 'digest': ledger['digest']}
+
+    def inspect_lineage(self):
+        """Whole-workspace history, assignments and observation labels."""
+        with self.atomic(write=False):
+            ledger = self._derivation_store().lineage()
+            events = []
+            for row in ledger['events']:
+                event = dict(row)
+                event['request'] = json.loads(event.pop('request_json'))
+                events.append(event)
+            return {**ledger, 'events': events, 'observations': [dict(row) for row in
+                    self.db.execute('SELECT * FROM observations ORDER BY id')]}
+
+    def assign_origin(self, event_id, observation_id, group_id, actor, reason, *, expected_revision):
+        return {'event_id': self._derivation_store().assign_origin(event_id, observation_id,
+            group_id, actor, reason, expected_revision=expected_revision)}
+
+    def merge_origins(self, event_id, group_ids, target_group_id, actor, reason, *, expected_revision):
+        return {'event_id': self._derivation_store().merge_origins(event_id, group_ids,
+            target_group_id, actor, reason, expected_revision=expected_revision)}
+
+    def reverse_lineage(self, event_id, target_event_id, actor, reason, *, expected_revision):
+        return {'event_id': self._derivation_store().reverse_lineage(event_id, target_event_id,
+            actor, reason, expected_revision=expected_revision)}
+
+    def list_propositions(self, *, query='', status='', limit=50, offset=0):
+        self._validate_page(limit, offset)
+        statuses = ('supported', 'opposed', 'contested', 'insufficient_evidence')
+        if status and status not in statuses:
+            raise ValueError('Unknown status filter')
+        sql = """WITH current AS (
+            SELECT p.*, COALESCE((SELECT status FROM revisions r
+                WHERE r.proposition_id=p.id ORDER BY sequence DESC LIMIT 1),
+                'insufficient_evidence') AS status, p.rowid AS position
+            FROM propositions p)
+            SELECT id, claim, scope, status FROM current
+            WHERE (instr(lower(claim), lower(?))>0 OR instr(lower(scope), lower(?))>0)
+            AND (?='' OR status=?) ORDER BY position DESC LIMIT ? OFFSET ?"""
+        return [dict(r) for r in self.db.execute(sql, (query, query, status, status, limit, offset))]
+
+    def list_observations(self, *, query='', source='', limit=50, offset=0):
+        self._validate_page(limit, offset)
+        return [dict(r) for r in self.db.execute("""
+            SELECT o.*, (SELECT COUNT(*) FROM evidence e LEFT JOIN withdrawals w
+                ON w.evidence_id=e.id WHERE e.observation_id=o.id AND w.evidence_id IS NULL)
+                AS active_links FROM observations o
+            WHERE (instr(lower(report), lower(?))>0 OR instr(lower(source), lower(?))>0)
+            AND (?='' OR source=?) ORDER BY o.rowid DESC LIMIT ? OFFSET ?
+            """, (query, query, source, source, limit, offset))]
+
+    @staticmethod
+    def _validate_page(limit, offset):
+        if type(limit) is not int or not 1 <= limit <= 100 or type(offset) is not int or offset < 0:
+            raise ValueError('limit must be 1–100 and offset must be nonnegative')
+
     def create_proposition(self, claim: str, scope: str) -> str:
         claim, scope = required(claim, "claim"), required(scope, "scope")
         identifier = str(uuid4())
-        with self.db:
+        with self.transaction():
             self.db.execute("INSERT INTO propositions (id, claim, scope) VALUES (?, ?, ?)",
                             (identifier, claim, scope))
         return identifier
@@ -70,14 +188,14 @@ class Workspace:
         observed_at = normalize_observed_at(observed_at)
         identifier = str(uuid4())
         now = datetime.now(timezone.utc).isoformat()
-        with self.db:
+        with self.transaction():
             self.db.execute('INSERT INTO observations (id, source, report, recorded_at, observed_at) VALUES (?, ?, ?, ?, ?)',
                             (identifier, source, report, now, observed_at))
         return identifier
 
     def inspect_observation(self, observation_id):
-        with self.db:
-            self.db.execute('BEGIN')
+        with self.transaction():
+            self._begin()
             observation = self.db.execute('SELECT * FROM observations WHERE id=?', (observation_id,)).fetchone()
             if observation is None:
                 raise ValueError(f'Unknown observation: {observation_id}')
@@ -97,8 +215,8 @@ class Workspace:
         if event_key is not None:
             event_key = required(event_key, 'event key')
         now = datetime.now(timezone.utc).isoformat()
-        with self.db:
-            self.db.execute('BEGIN IMMEDIATE')
+        with self.transaction():
+            self._begin(immediate=True)
             observation = self.db.execute('SELECT source FROM observations WHERE id=?', (observation_id,)).fetchone()
             if observation is None:
                 raise ValueError(f'Unknown observation: {observation_id}')
@@ -164,9 +282,9 @@ class Workspace:
                                    'interpretation': asdict(interpretation) if interpretation else None}, observed_at)
         now = datetime.now(timezone.utc).isoformat()
         observation_id, evidence_id = str(uuid4()), str(uuid4())
-        with self.db:
+        with self.transaction():
             # Serialize read/modify/write across concurrent CLI processes.
-            self.db.execute("BEGIN IMMEDIATE")
+            self._begin(immediate=True)
             if not self.db.execute("SELECT 1 FROM propositions WHERE id = ?",
                                    (proposition_id,)).fetchone():
                 raise ValueError(f"Unknown proposition: {proposition_id}")
@@ -201,8 +319,8 @@ class Workspace:
 
     def evidence_context(self, evidence_id):
         """Read the observation and proposition for an evidence link in one snapshot."""
-        with self.db:
-            self.db.execute('BEGIN')
+        with self.transaction():
+            self._begin()
             row = self.db.execute(
                 'SELECT e.id AS evidence_id, e.relation, e.observation_id, e.proposition_id, '
                 'o.source, o.report, o.observed_at, p.claim, p.scope, '
@@ -226,8 +344,8 @@ class Workspace:
         if mass is not None:
             mass = ProjectionEvidence('validate', 'validate', 'validate', relation, mass).mass
         now = datetime.now(timezone.utc).isoformat()
-        with self.db:
-            self.db.execute('BEGIN IMMEDIATE')
+        with self.transaction():
+            self._begin(immediate=True)
             old = self.db.execute(
                 'SELECT e.observation_id, e.proposition_id, o.source, m.mass, m.semantics, '
                 'm.cluster_id, m.cluster_actor, m.cluster_reason, m.migration_id '
@@ -296,8 +414,8 @@ class Workspace:
         request = request_digest({'corrects': evidence_id, 'actor': actor, 'reason': reason,
                                    'report': report, 'source': source, 'relation': relation, 'mass': mass}, observed_at) if correcting else None
         now = datetime.now(timezone.utc).isoformat()
-        with self.db:
-            self.db.execute("BEGIN IMMEDIATE")
+        with self.transaction():
+            self._begin(immediate=True)
             old = self.db.execute("SELECT e.proposition_id, o.source FROM evidence e JOIN observations o ON o.id=e.observation_id WHERE e.id = ?",
                                   (evidence_id,)).fetchone()
             if old is None:
@@ -335,8 +453,8 @@ class Workspace:
 
     def inspect(self, proposition_id: str, *, projection_policy=None) -> dict:
         # One snapshot for a consistent inspection during concurrent writes.
-        with self.db:
-            self.db.execute("BEGIN")
+        with self.transaction():
+            self._begin()
             row = self.db.execute("SELECT * FROM propositions WHERE id = ?",
                                   (proposition_id,)).fetchone()
             if row is None:
@@ -378,8 +496,8 @@ class Workspace:
                         (eid, pid, source, mass, SEMANTICS, cluster, actor, reason, event_key, request, migration_id))
 
     def project(self, proposition_id, policy='binary-beta-v1'):
-        with self.db:
-            self.db.execute('BEGIN')
+        with self.transaction():
+            self._begin()
             return self._project(proposition_id, policy)
 
     def _project(self, proposition_id, policy_id):
@@ -411,8 +529,8 @@ class Workspace:
 
     def migrate_impacts(self, proposition_id, actor, reason):
         actor, reason = required(actor, 'actor'), required(reason, 'reason')
-        with self.db:
-            self.db.execute('BEGIN IMMEDIATE')
+        with self.transaction():
+            self._begin(immediate=True)
             if not self.db.execute('SELECT 1 FROM propositions WHERE id=?', (proposition_id,)).fetchone():
                 raise ValueError(f'Unknown proposition: {proposition_id}')
             rows = self.db.execute("SELECT e.id, o.source FROM evidence e JOIN observations o ON o.id=e.observation_id LEFT JOIN evidence_impact m ON m.evidence_id=e.id WHERE e.proposition_id=? AND m.evidence_id IS NULL", (proposition_id,)).fetchall()

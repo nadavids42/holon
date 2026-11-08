@@ -7,22 +7,27 @@ provenance**, extending the existing workspace. The authoritative progress track
 exit criteria, UI sequence, and future-session handoff are in
 [the evidence revision research plan](evidence-revision-research-plan.md).
 
-**Current checkpoint (2026-11-06):** steps 1–4 are complete: protocol,
-[adversarial Beta validation](../experiments/002-binary-beta/README.md),
-[the replayable environment](../experiments/003-evidence-revision/README.md), and
-[H0/LWW/RR/RB structured baselines](../experiments/003-evidence-revision/baselines.md).
-All 12 adversarial scenarios and 80 repository tests pass. Core behavior is
-unchanged. The common actor/harness persists method state across processes,
-meters work and runtime, isolates audits, and scores development episodes offline.
-These are engineering smoke comparisons, not a frozen research evaluation.
+**Current checkpoint (2026-11-08):** steps 1–4 are complete; step 6 slices 1–4
+are implemented with the [derivation domain contract](derivation-lineage-contract.md).
+Immutable signed claims and justifications represent AND premises and OR
+alternatives; validated graphs reject circular dependencies. Schema-3 storage preserves
+justifications and attributed origin assignment/merge/reversal history. Shared service, CLI and local API
+operations now support atomic composition and decoded inspection. All 134 tests
+pass. GUI derivation and origin controls are implemented; live acceptance remains
+pending. Belief updates remain future work.
 
-**Next action:** step 5, UI-1 through UI-5: the local browser workspace for
-observations, interpretation, acceptance, inspection and correction. Start with
-the service/API boundary; preserve CLI behavior. Before a research pilot, review
-candidate family grouping/labels and freeze the actor/baseline configuration.
+Step 5's GUI is implemented. The user confirmed live creation of claims and
+observations, model preview/acceptance, and conflicting evidence showing contested
+status. The remaining [browser walkthrough](browser-workspace.md) stays open;
+the user authorized proceeding with step 6 alongside those checks.
 
-Grounded chat follows later (step 10). Neither is a prerequisite for starting the
-research protocol. Update this checkpoint and the plan together as work progresses.
+**Next action:** run the slice 4 walkthrough in the browser guide, then specify
+step 7 eligibility propagation and selective repair. The new controls record
+structure only; they do not update beliefs or projection clusters.
+Before a research pilot, review family grouping/labels and freeze configuration.
+
+Grounded chat follows later (step 10). Keep the CLI and headless research harness
+runnable. Update this checkpoint and the plan together as work progresses.
 
 ## Existing engineering foundation
 
@@ -36,7 +41,8 @@ research protocol. Update this checkpoint and the plan together as work progress
    experiment 002. See `binary-beta-implementation-plan.md` for the slice history.
 5. Experiment 003 has criteria, a 36-family candidate generator (four paired
    provenance conditions), replay/checkpoints, and action/control-audit scorers.
-   Baselines, complete method cost accounting and comparative runs remain next.
+   H0/LWW/RR/RB baselines, method cost accounting, and development comparisons
+   are implemented. Frozen research evaluation and later comparators remain future work.
 
 Foundational architecture follow-up: the semantic contract is in
 `epistemic-semantic-contract.md` and the implementation plan is in

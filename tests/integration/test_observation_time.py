@@ -102,7 +102,7 @@ class ObservationTimeTests(unittest.TestCase):
             for _ in range(2):
                 w = Workspace(path)
                 try:
-                    self.assertEqual(w.db.execute('PRAGMA user_version').fetchone()[0], 2)
+                    self.assertEqual(w.db.execute('PRAGMA user_version').fetchone()[0], 3)
                     self.assertEqual(w.db.execute('PRAGMA foreign_key_check').fetchall(), [])
                     self.assertIsNone(w.inspect('p')['evidence'][0]['observed_at'])
                     self.assertEqual(w.inspect('p')['history'][0]['sequence'], 7)
